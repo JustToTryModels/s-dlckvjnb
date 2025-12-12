@@ -1,6 +1,6 @@
 # 🏢 Employee Churn Prediction
 
-A machine learning project to predict employee attrition using Random Forest classification, helping organizations identify at-risk employees and take proactive retention measures.
+A machine learning project to predict employee attrition, helping organizations identify at-risk employees and take proactive retention measures.
 
 ## 📋 Table of Contents
 
