@@ -17,8 +17,6 @@ A machine learning project to predict employee attrition using Random Forest cla
   - [Compensation and Departmental Risks](#compensation-and-departmental-risks)
   - [Critical Flight Risk Profiles](#critical-flight-risk-profiles)
 - [Strategic Recommendations](#-strategic-recommendations)
-- [Future Improvements](#-future-improvements)
-- [License](#-license)
 
 ---
 
