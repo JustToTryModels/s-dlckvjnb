@@ -61,14 +61,6 @@ st.markdown("""
         margin: 1rem 0;
         border: 1px solid #b8daff;
     }
-    .hf-badge {
-        background-color: #ff9d00;
-        color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 15px;
-        font-size: 0.85rem;
-        font-weight: bold;
-    }
     .stButton>button {
         width: 100%;
         background-color: #1E3A5F;
@@ -112,19 +104,6 @@ st.markdown("""
     }
     
     /* Blue styled expander */
-    .blue-expander .streamlit-expanderHeader {
-        background-color: #1E3A5F !important;
-        color: white !important;
-        border-radius: 8px !important;
-        font-size: 1.2rem !important;
-        padding: 0.75rem !important;
-    }
-    .blue-expander .streamlit-expanderHeader:hover {
-        background-color: #2E5A8F !important;
-        color: white !important;
-    }
-    
-    /* Style all expanders to be blue */
     div[data-testid="stExpander"] {
         border: none !important;
         border-radius: 8px !important;
@@ -193,6 +172,25 @@ def load_model_from_huggingface():
         return None
 
 # ============================================================================
+# CALLBACK FUNCTIONS FOR SYNCING SLIDERS AND NUMBER INPUTS
+# ============================================================================
+def sync_satisfaction_slider():
+    """Sync satisfaction level from slider to session state"""
+    st.session_state.satisfaction_level = st.session_state.sat_slider
+
+def sync_satisfaction_input():
+    """Sync satisfaction level from number input to session state"""
+    st.session_state.satisfaction_level = st.session_state.sat_input
+
+def sync_evaluation_slider():
+    """Sync evaluation from slider to session state"""
+    st.session_state.last_evaluation = st.session_state.eval_slider
+
+def sync_evaluation_input():
+    """Sync evaluation from number input to session state"""
+    st.session_state.last_evaluation = st.session_state.eval_input
+
+# ============================================================================
 # MAIN APPLICATION
 # ============================================================================
 def main():
@@ -200,24 +198,13 @@ def main():
     st.markdown('<h1 class="main-header">👥 Employee Turnover Prediction</h1>', unsafe_allow_html=True)
     st.markdown('<p class="sub-header">Predict whether an employee is likely to leave the company</p>', unsafe_allow_html=True)
     
-    # Hugging Face badge
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.markdown(
-            f'<p style="text-align: center;"><span class="hf-badge">🤗 Powered by Hugging Face</span></p>',
-            unsafe_allow_html=True
-        )
-    
-    # Load model
-    with st.spinner("🔄 Loading model from Hugging Face..."):
-        model = load_model_from_huggingface()
+    # Load model silently
+    model = load_model_from_huggingface()
     
     if model is None:
         st.error("❌ Failed to load model. Please check the Hugging Face repository.")
         st.info(f"Repository: https://huggingface.co/{HF_REPO_ID}")
         return
-    
-    st.success("✅ Model loaded successfully!")
     
     # ========================================================================
     # SIDEBAR
@@ -282,7 +269,7 @@ def main():
         st.write("😊 **Satisfaction Level**")
         sat_col1, sat_col2 = st.columns([3, 1])
         with sat_col1:
-            satisfaction_slider = st.slider(
+            st.slider(
                 "Satisfaction Slider",
                 min_value=0.0,
                 max_value=1.0,
@@ -290,10 +277,11 @@ def main():
                 step=0.01,
                 help="Employee satisfaction level (0 = Very Dissatisfied, 1 = Very Satisfied)",
                 label_visibility="collapsed",
-                key="sat_slider"
+                key="sat_slider",
+                on_change=sync_satisfaction_slider
             )
         with sat_col2:
-            satisfaction_input = st.number_input(
+            st.number_input(
                 "Satisfaction Input",
                 min_value=0.0,
                 max_value=1.0,
@@ -301,25 +289,18 @@ def main():
                 step=0.01,
                 format="%.2f",
                 label_visibility="collapsed",
-                key="sat_input"
+                key="sat_input",
+                on_change=sync_satisfaction_input
             )
         
-        # Sync slider and input
-        if satisfaction_slider != st.session_state.satisfaction_level:
-            satisfaction_level = satisfaction_slider
-            st.session_state.satisfaction_level = satisfaction_slider
-        elif satisfaction_input != st.session_state.satisfaction_level:
-            satisfaction_level = satisfaction_input
-            st.session_state.satisfaction_level = satisfaction_input
-        else:
-            satisfaction_level = st.session_state.satisfaction_level
+        satisfaction_level = st.session_state.satisfaction_level
     
     with row1_col2:
         # Last Evaluation with both slider and number input
         st.write("📊 **Last Evaluation Score**")
         eval_col1, eval_col2 = st.columns([3, 1])
         with eval_col1:
-            evaluation_slider = st.slider(
+            st.slider(
                 "Evaluation Slider",
                 min_value=0.0,
                 max_value=1.0,
@@ -327,10 +308,11 @@ def main():
                 step=0.01,
                 help="Last performance evaluation score (0 = Poor, 1 = Excellent)",
                 label_visibility="collapsed",
-                key="eval_slider"
+                key="eval_slider",
+                on_change=sync_evaluation_slider
             )
         with eval_col2:
-            evaluation_input = st.number_input(
+            st.number_input(
                 "Evaluation Input",
                 min_value=0.0,
                 max_value=1.0,
@@ -338,18 +320,11 @@ def main():
                 step=0.01,
                 format="%.2f",
                 label_visibility="collapsed",
-                key="eval_input"
+                key="eval_input",
+                on_change=sync_evaluation_input
             )
         
-        # Sync slider and input
-        if evaluation_slider != st.session_state.last_evaluation:
-            last_evaluation = evaluation_slider
-            st.session_state.last_evaluation = evaluation_slider
-        elif evaluation_input != st.session_state.last_evaluation:
-            last_evaluation = evaluation_input
-            st.session_state.last_evaluation = evaluation_input
-        else:
-            last_evaluation = st.session_state.last_evaluation
+        last_evaluation = st.session_state.last_evaluation
     
     # ========================================================================
     # ROW 2: Years at Company & Number of Projects (side by side)
