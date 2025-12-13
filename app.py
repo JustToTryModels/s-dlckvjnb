@@ -532,7 +532,11 @@ def main():
         col3, col4, col5 = st.columns(3)
         
         with col3:
-            st.markdown('<div style="margin-top: 10px;"><strong>📅 Years at Company</strong></div>', unsafe_allow_html=True)
+            st.markdown("""
+            <div class="feature-card">
+                <span style="font-size: 1.2rem;">📅 <strong>Years at Company</strong></span>
+            </div>
+            """, unsafe_allow_html=True)
             time_spend_company = st.number_input(
                 "Years",
                 min_value=1,
@@ -544,7 +548,11 @@ def main():
             )
         
         with col4:
-            st.markdown('<div style="margin-top: 10px;"><strong>📁 Number of Projects</strong></div>', unsafe_allow_html=True)
+            st.markdown("""
+            <div class="feature-card">
+                <span style="font-size: 1.2rem;">📁 <strong>Number of Projects</strong></span>
+            </div>
+            """, unsafe_allow_html=True)
             number_project = st.number_input(
                 "Projects",
                 min_value=1,
@@ -556,7 +564,11 @@ def main():
             )
         
         with col5:
-            st.markdown('<div style="margin-top: 10px;"><strong>⏰ Avg. Monthly Hours</strong></div>', unsafe_allow_html=True)
+            st.markdown("""
+            <div class="feature-card">
+                <span style="font-size: 1.2rem;">⏰ <strong>Avg. Monthly Hours</strong></span>
+            </div>
+            """, unsafe_allow_html=True)
             average_monthly_hours = st.number_input(
                 "Hours",
                 min_value=80,
