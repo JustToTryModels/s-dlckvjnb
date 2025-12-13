@@ -107,11 +107,8 @@ employee-churn-prediction/
 - **`left`**: Binary indicator (1 = Left, 0 = Stayed)
 
 ### Data Source
-
-[![Open in Kaggle](https://kaggle.com/static/images/open-in-kaggle.svg)](https://www.kaggle.com/datasets/giripujar/hr-analytics)
-
 The dataset used is the **HR Analytics Dataset** from Kaggle.
-
+[![Open in Kaggle](https://kaggle.com/static/images/open-in-kaggle.svg)](https://www.kaggle.com/datasets/giripujar/hr-analytics)
 ---
 
 ## 🛠️ Installation
