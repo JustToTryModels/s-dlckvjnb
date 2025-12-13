@@ -62,66 +62,65 @@ st.markdown("""
         border: 1px solid #b8daff;
     }
     
-    /* ===== ATTRACTIVE PREDICT BUTTON STYLING - VIBRANT PURPLE TO PINK THEME ===== */
+    /* ===== ATTRACTIVE PREDICT BUTTON STYLING - DARKER PROFESSIONAL THEME ===== */
     .stButton>button {
         width: 100%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #667eea 100%);
-        background-size: 400% 400%;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #1a1a2e 75%, #16213e 100%);
+        background-size: 300% 300%;
         color: white !important;
         font-size: 1.3rem;
         font-weight: bold;
         padding: 1rem 2rem;
         border-radius: 50px;
-        border: none;
+        border: 2px solid #4a90d9;
         cursor: pointer;
         position: relative;
         overflow: hidden;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4), 0 8px 30px rgba(118, 75, 162, 0.3);
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        animation: gradientFlow 5s ease infinite, pulseGlow 2s ease-in-out infinite;
+        box-shadow: 0 4px 15px rgba(74, 144, 217, 0.3), 0 8px 30px rgba(26, 26, 46, 0.4);
+        transition: all 0.3s ease;
+        animation: darkGradient 4s ease infinite, subtleGlow 2.5s ease-in-out infinite;
         text-transform: uppercase;
         letter-spacing: 2px;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     }
     
-    /* Flowing gradient animation */
-    @keyframes gradientFlow {
+    /* Dark gradient animation */
+    @keyframes darkGradient {
         0% { background-position: 0% 50%; }
-        25% { background-position: 50% 100%; }
         50% { background-position: 100% 50%; }
-        75% { background-position: 50% 0%; }
         100% { background-position: 0% 50%; }
     }
     
-    /* Pulsing glow animation */
-    @keyframes pulseGlow {
+    /* Subtle glow animation */
+    @keyframes subtleGlow {
         0% { 
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4), 0 8px 30px rgba(118, 75, 162, 0.3);
-            transform: scale(1);
+            box-shadow: 0 4px 15px rgba(74, 144, 217, 0.3), 0 8px 30px rgba(26, 26, 46, 0.4);
+            border-color: #4a90d9;
         }
         50% { 
-            box-shadow: 0 6px 25px rgba(240, 147, 251, 0.5), 0 10px 40px rgba(245, 87, 108, 0.4), 0 0 40px rgba(102, 126, 234, 0.3);
-            transform: scale(1.01);
+            box-shadow: 0 4px 20px rgba(74, 144, 217, 0.5), 0 8px 40px rgba(26, 26, 46, 0.5), 0 0 30px rgba(74, 144, 217, 0.2);
+            border-color: #6ba3e0;
         }
         100% { 
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4), 0 8px 30px rgba(118, 75, 162, 0.3);
-            transform: scale(1);
+            box-shadow: 0 4px 15px rgba(74, 144, 217, 0.3), 0 8px 30px rgba(26, 26, 46, 0.4);
+            border-color: #4a90d9;
         }
     }
     
     /* Hover effects */
     .stButton>button:hover {
-        transform: translateY(-5px) scale(1.03);
-        background: linear-gradient(135deg, #f5576c 0%, #f093fb 25%, #764ba2 50%, #667eea 75%, #f5576c 100%);
-        background-size: 400% 400%;
-        box-shadow: 0 10px 30px rgba(240, 147, 251, 0.5), 0 15px 50px rgba(118, 75, 162, 0.4), 0 0 60px rgba(245, 87, 108, 0.3);
+        transform: translateY(-4px) scale(1.02);
+        background: linear-gradient(135deg, #0f3460 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #1a1a2e 100%);
+        background-size: 300% 300%;
+        box-shadow: 0 8px 25px rgba(74, 144, 217, 0.5), 0 12px 40px rgba(26, 26, 46, 0.5), 0 0 50px rgba(74, 144, 217, 0.3);
+        border-color: #7bb3e8;
         color: white !important;
     }
     
     /* Active/Click effect */
     .stButton>button:active {
         transform: translateY(2px) scale(0.98);
-        box-shadow: 0 2px 10px rgba(102, 126, 234, 0.5), 0 4px 20px rgba(118, 75, 162, 0.3);
+        box-shadow: 0 2px 10px rgba(74, 144, 217, 0.4), 0 4px 20px rgba(26, 26, 46, 0.3);
         color: white !important;
     }
     
@@ -136,43 +135,26 @@ st.markdown("""
         background: linear-gradient(
             90deg,
             transparent,
-            rgba(255, 255, 255, 0.3),
+            rgba(255, 255, 255, 0.15),
             transparent
         );
-        transition: left 0.7s ease;
+        transition: left 0.6s ease;
     }
     
     .stButton>button:hover::before {
         left: 100%;
     }
     
-    /* Sparkle effect */
-    .stButton>button::after {
-        content: '✨';
-        position: absolute;
-        top: 50%;
-        right: 20px;
-        transform: translateY(-50%);
-        font-size: 1.2rem;
-        opacity: 0;
-        transition: all 0.3s ease;
-    }
-    
-    .stButton>button:hover::after {
-        opacity: 1;
-        right: 15px;
-    }
-    
     /* Focus effect */
     .stButton>button:focus {
         outline: none;
-        box-shadow: 0 0 0 4px rgba(240, 147, 251, 0.4), 0 6px 25px rgba(102, 126, 234, 0.5), 0 10px 40px rgba(118, 75, 162, 0.4);
+        box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.4), 0 4px 20px rgba(74, 144, 217, 0.5), 0 8px 30px rgba(26, 26, 46, 0.4);
         color: white !important;
     }
     
-    /* Smooth hover animation speed up */
+    /* Smooth hover animation */
     .stButton>button:hover {
-        animation: gradientFlow 2s ease infinite;
+        animation: darkGradient 2s ease infinite;
     }
     
     /* Ensure text stays white in ALL states */
