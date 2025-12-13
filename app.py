@@ -62,28 +62,69 @@ st.markdown("""
         border: 1px solid #b8daff;
     }
     
-    /* ===== SHINY CTA BUTTON STYLING ===== */
+    /* ===== ATTRACTIVE PREDICT BUTTON STYLING - DARKER PROFESSIONAL THEME ===== */
     .stButton>button {
         width: 100%;
-        background: linear-gradient(135deg, #1a1a2e 0%, #0d0d1a 50%, #1a1a2e 100%);
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #1a1a2e 75%, #16213e 100%);
+        background-size: 300% 300%;
         color: white !important;
-        font-size: 1.2rem;
-        font-weight: 600;
+        font-size: 1.3rem;
+        font-weight: bold;
         padding: 1rem 2rem;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 50px;
+        border: 2px solid #4a90d9;
         cursor: pointer;
         position: relative;
         overflow: hidden;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 
-                    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        text-transform: none;
-        letter-spacing: 0.5px;
-        z-index: 1;
+        box-shadow: 0 4px 15px rgba(74, 144, 217, 0.3), 0 8px 30px rgba(26, 26, 46, 0.4);
+        transition: all 0.3s ease;
+        animation: darkGradient 4s ease infinite, subtleGlow 2.5s ease-in-out infinite;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     }
     
-    /* Shiny sweep effect */
+    /* Dark gradient animation */
+    @keyframes darkGradient {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    
+    /* Subtle glow animation */
+    @keyframes subtleGlow {
+        0% { 
+            box-shadow: 0 4px 15px rgba(74, 144, 217, 0.3), 0 8px 30px rgba(26, 26, 46, 0.4);
+            border-color: #4a90d9;
+        }
+        50% { 
+            box-shadow: 0 4px 20px rgba(74, 144, 217, 0.5), 0 8px 40px rgba(26, 26, 46, 0.5), 0 0 30px rgba(74, 144, 217, 0.2);
+            border-color: #6ba3e0;
+        }
+        100% { 
+            box-shadow: 0 4px 15px rgba(74, 144, 217, 0.3), 0 8px 30px rgba(26, 26, 46, 0.4);
+            border-color: #4a90d9;
+        }
+    }
+    
+    /* Hover effects */
+    .stButton>button:hover {
+        transform: translateY(-4px) scale(1.02);
+        background: linear-gradient(135deg, #0f3460 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #1a1a2e 100%);
+        background-size: 300% 300%;
+        box-shadow: 0 8px 25px rgba(74, 144, 217, 0.5), 0 12px 40px rgba(26, 26, 46, 0.5), 0 0 50px rgba(74, 144, 217, 0.3);
+        border-color: #7bb3e8;
+        color: white !important;
+    }
+    
+    /* Active/Click effect */
+    .stButton>button:active {
+        transform: translateY(2px) scale(0.98);
+        box-shadow: 0 2px 10px rgba(74, 144, 217, 0.4), 0 4px 20px rgba(26, 26, 46, 0.3);
+        color: white !important;
+    }
+    
+    /* Shimmer effect overlay */
     .stButton>button::before {
         content: '';
         position: absolute;
@@ -92,70 +133,28 @@ st.markdown("""
         width: 100%;
         height: 100%;
         background: linear-gradient(
-            120deg,
+            90deg,
             transparent,
-            rgba(255, 255, 255, 0.1),
-            rgba(255, 255, 255, 0.2),
-            rgba(255, 255, 255, 0.1),
+            rgba(255, 255, 255, 0.15),
             transparent
         );
         transition: left 0.6s ease;
-        z-index: 2;
-    }
-    
-    /* Continuous subtle shimmer animation */
-    .stButton>button::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 50%;
-        height: 100%;
-        background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(255, 255, 255, 0.08),
-            transparent
-        );
-        animation: shimmer 3s ease-in-out infinite;
-        z-index: 2;
-    }
-    
-    @keyframes shimmer {
-        0% { left: -100%; }
-        100% { left: 200%; }
-    }
-    
-    /* Hover effects */
-    .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 
-                    0 0 40px rgba(99, 102, 241, 0.15),
-                    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-        background: linear-gradient(135deg, #252542 0%, #1a1a2e 50%, #252542 100%);
-        border-color: rgba(255, 255, 255, 0.2);
-        color: white !important;
     }
     
     .stButton>button:hover::before {
         left: 100%;
     }
     
-    /* Active/Click effect */
-    .stButton>button:active {
-        transform: translateY(1px);
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3),
-                    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        color: white !important;
-    }
-    
     /* Focus effect */
     .stButton>button:focus {
         outline: none;
-        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3), 
-                    0 4px 20px rgba(0, 0, 0, 0.3),
-                    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.4), 0 4px 20px rgba(74, 144, 217, 0.5), 0 8px 30px rgba(26, 26, 46, 0.4);
         color: white !important;
+    }
+    
+    /* Smooth hover animation */
+    .stButton>button:hover {
+        animation: darkGradient 2s ease infinite;
     }
     
     /* Ensure text stays white in ALL states */
@@ -279,15 +278,19 @@ def load_model_from_huggingface():
 # CALLBACK FUNCTIONS FOR SYNCING SLIDERS AND NUMBER INPUTS
 # ============================================================================
 def sync_satisfaction_slider():
+    """Sync satisfaction level from slider to session state"""
     st.session_state.satisfaction_level = st.session_state.sat_slider
 
 def sync_satisfaction_input():
+    """Sync satisfaction level from number input to session state"""
     st.session_state.satisfaction_level = st.session_state.sat_input
 
 def sync_evaluation_slider():
+    """Sync evaluation from slider to session state"""
     st.session_state.last_evaluation = st.session_state.eval_slider
 
 def sync_evaluation_input():
+    """Sync evaluation from number input to session state"""
     st.session_state.last_evaluation = st.session_state.eval_input
 
 # ============================================================================
@@ -353,24 +356,26 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
-    # Initialize session state
+    # Initialize session state for syncing slider and number input
     if 'satisfaction_level' not in st.session_state:
         st.session_state.satisfaction_level = 0.5
     if 'last_evaluation' not in st.session_state:
         st.session_state.last_evaluation = 0.7
     
     # ========================================================================
-    # ROW 1: Satisfaction Level & Last Evaluation
+    # ROW 1: Satisfaction Level & Last Evaluation (side by side)
     # ========================================================================
     row1_col1, row1_col2 = st.columns(2)
     
     with row1_col1:
+        # Satisfaction Level with both slider and number input
         st.write("😊 **Satisfaction Level**")
         sat_col1, sat_col2 = st.columns([3, 1])
         with sat_col1:
             st.slider(
                 "Satisfaction Slider",
-                min_value=0.0, max_value=1.0,
+                min_value=0.0,
+                max_value=1.0,
                 value=st.session_state.satisfaction_level,
                 step=0.01,
                 help="Employee satisfaction level (0 = Very Dissatisfied, 1 = Very Satisfied)",
@@ -381,22 +386,27 @@ def main():
         with sat_col2:
             st.number_input(
                 "Satisfaction Input",
-                min_value=0.0, max_value=1.0,
+                min_value=0.0,
+                max_value=1.0,
                 value=st.session_state.satisfaction_level,
-                step=0.01, format="%.2f",
+                step=0.01,
+                format="%.2f",
                 label_visibility="collapsed",
                 key="sat_input",
                 on_change=sync_satisfaction_input
             )
+        
         satisfaction_level = st.session_state.satisfaction_level
     
     with row1_col2:
+        # Last Evaluation with both slider and number input
         st.write("📊 **Last Evaluation Score**")
         eval_col1, eval_col2 = st.columns([3, 1])
         with eval_col1:
             st.slider(
                 "Evaluation Slider",
-                min_value=0.0, max_value=1.0,
+                min_value=0.0,
+                max_value=1.0,
                 value=st.session_state.last_evaluation,
                 step=0.01,
                 help="Last performance evaluation score (0 = Poor, 1 = Excellent)",
@@ -407,31 +417,42 @@ def main():
         with eval_col2:
             st.number_input(
                 "Evaluation Input",
-                min_value=0.0, max_value=1.0,
+                min_value=0.0,
+                max_value=1.0,
                 value=st.session_state.last_evaluation,
-                step=0.01, format="%.2f",
+                step=0.01,
+                format="%.2f",
                 label_visibility="collapsed",
                 key="eval_input",
                 on_change=sync_evaluation_input
             )
+        
         last_evaluation = st.session_state.last_evaluation
     
     # ========================================================================
-    # ROW 2: Years at Company & Number of Projects
+    # ROW 2: Years at Company & Number of Projects (side by side)
     # ========================================================================
     row2_col1, row2_col2 = st.columns(2)
     
     with row2_col1:
+        # Time Spent at Company
         time_spend_company = st.number_input(
             "📅 Years at Company",
-            min_value=1, max_value=40, value=3, step=1,
+            min_value=1,
+            max_value=40,
+            value=3,
+            step=1,
             help="Number of years the employee has worked at the company"
         )
     
     with row2_col2:
+        # Number of Projects
         number_project = st.number_input(
             "📁 Number of Projects",
-            min_value=1, max_value=10, value=4, step=1,
+            min_value=1,
+            max_value=10,
+            value=4,
+            step=1,
             help="Number of projects the employee is currently working on"
         )
     
@@ -441,9 +462,13 @@ def main():
     row3_col1, row3_col2 = st.columns(2)
     
     with row3_col1:
+        # Average Monthly Hours
         average_monthly_hours = st.number_input(
             "⏰ Average Monthly Hours",
-            min_value=80, max_value=350, value=200, step=5,
+            min_value=80,
+            max_value=350,
+            value=200,
+            step=5,
             help="Average number of hours worked per month"
         )
     
@@ -469,8 +494,10 @@ def main():
     # PREDICTION RESULTS
     # ========================================================================
     if predict_button:
+        # Create input DataFrame with correct feature order
         input_df = pd.DataFrame([input_data])[BEST_FEATURES]
         
+        # Make prediction
         prediction = model.predict(input_df)[0]
         prediction_proba = model.predict_proba(input_df)[0]
         
@@ -480,6 +507,7 @@ def main():
         st.markdown("---")
         st.subheader("🎯 Prediction Results")
         
+        # Results in two columns
         col1, col2 = st.columns(2)
         
         with col1:
@@ -505,6 +533,7 @@ def main():
         with col2:
             st.markdown("### 📊 Prediction Probabilities")
             
+            # Stay probability with GREEN bar
             st.write(f"**Probability of Staying:** {prob_stay:.1f}%")
             st.markdown(f"""
             <div class="progress-bar-container">
@@ -512,6 +541,7 @@ def main():
             </div>
             """, unsafe_allow_html=True)
             
+            # Leave probability with RED bar
             st.write(f"**Probability of Leaving:** {prob_leave:.1f}%")
             st.markdown(f"""
             <div class="progress-bar-container">
@@ -519,7 +549,9 @@ def main():
             </div>
             """, unsafe_allow_html=True)
         
-        # Input Summary
+        # ====================================================================
+        # INPUT SUMMARY (Collapsible Dropdown) - Centered like predict button
+        # ====================================================================
         st.markdown("---")
         
         col1, col2, col3 = st.columns([1, 2, 1])
