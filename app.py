@@ -33,6 +33,13 @@ st.markdown("""
         text-align: center;
         margin-bottom: 2rem;
     }
+    .section-header {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #1E3A5F;
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
     .prediction-box {
         padding: 2rem;
         border-radius: 10px;
@@ -436,7 +443,7 @@ def main():
     # MAIN INPUT SECTION
     # ========================================================================
     st.markdown("---")
-    st.subheader("📝 Enter Employee Information")
+    st.markdown('<h2 class="section-header">📝 Enter Employee Information</h2>', unsafe_allow_html=True)
     
     # Initialize session state for syncing slider and number input
     if 'satisfaction_level' not in st.session_state:
