@@ -62,6 +62,21 @@ st.markdown("""
         border: 1px solid #b8daff;
     }
     
+    /* INPUT CARDS - From Code 1 */
+    .feature-card {
+        background-color: #ffffff;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        border-left: 5px solid #1E3A5F;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        margin-bottom: 1rem;
+    }
+    .feature-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    }
+    
     /* ===== VIBRANT RAINBOW GRADIENT PREDICT BUTTON ===== */
     .stButton>button {
         width: 100%;
@@ -436,114 +451,121 @@ def main():
         st.session_state.last_evaluation = 0.7
     
     # ========================================================================
-    # ROW 1: Satisfaction Level & Last Evaluation (side by side)
+    # ROW 1: Satisfaction Level & Last Evaluation (side by side with feature cards)
     # ========================================================================
-    row1_col1, row1_col2 = st.columns(2)
-    
-    with row1_col1:
-        # Satisfaction Level with both slider and number input
-        st.write("😊 **Satisfaction Level**")
-        sat_col1, sat_col2 = st.columns([3, 1])
-        with sat_col1:
-            st.slider(
-                "Satisfaction Slider",
-                min_value=0.0,
-                max_value=1.0,
-                value=st.session_state.satisfaction_level,
-                step=0.01,
-                help="Employee satisfaction level (0 = Very Dissatisfied, 1 = Very Satisfied)",
+    with st.container():
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("""
+            <div class="feature-card">
+                <span style="font-size: 1.2rem;">😊 <strong>Satisfaction Level</strong></span>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            sat_col1, sat_col2 = st.columns([3, 1])
+            with sat_col1:
+                st.slider(
+                    "Satisfaction Slider",
+                    min_value=0.0,
+                    max_value=1.0,
+                    value=st.session_state.satisfaction_level,
+                    step=0.01,
+                    help="Employee satisfaction level (0 = Very Dissatisfied, 1 = Very Satisfied)",
+                    label_visibility="collapsed",
+                    key="sat_slider",
+                    on_change=sync_satisfaction_slider
+                )
+            with sat_col2:
+                st.number_input(
+                    "Satisfaction Input",
+                    min_value=0.0,
+                    max_value=1.0,
+                    value=st.session_state.satisfaction_level,
+                    step=0.01,
+                    format="%.2f",
+                    label_visibility="collapsed",
+                    key="sat_input",
+                    on_change=sync_satisfaction_input
+                )
+            
+            satisfaction_level = st.session_state.satisfaction_level
+        
+        with col2:
+            st.markdown("""
+            <div class="feature-card">
+                <span style="font-size: 1.2rem;">📊 <strong>Last Evaluation</strong></span>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            eval_col1, eval_col2 = st.columns([3, 1])
+            with eval_col1:
+                st.slider(
+                    "Evaluation Slider",
+                    min_value=0.0,
+                    max_value=1.0,
+                    value=st.session_state.last_evaluation,
+                    step=0.01,
+                    help="Last performance evaluation score (0 = Poor, 1 = Excellent)",
+                    label_visibility="collapsed",
+                    key="eval_slider",
+                    on_change=sync_evaluation_slider
+                )
+            with eval_col2:
+                st.number_input(
+                    "Evaluation Input",
+                    min_value=0.0,
+                    max_value=1.0,
+                    value=st.session_state.last_evaluation,
+                    step=0.01,
+                    format="%.2f",
+                    label_visibility="collapsed",
+                    key="eval_input",
+                    on_change=sync_evaluation_input
+                )
+            
+            last_evaluation = st.session_state.last_evaluation
+        
+        # ========================================================================
+        # ROW 2: Years at Company, Number of Projects, Average Monthly Hours (3 columns)
+        # ========================================================================
+        col3, col4, col5 = st.columns(3)
+        
+        with col3:
+            st.markdown('<div style="margin-top: 10px;"><strong>📅 Years at Company</strong></div>', unsafe_allow_html=True)
+            time_spend_company = st.number_input(
+                "Years",
+                min_value=1,
+                max_value=40,
+                value=3,
+                step=1,
                 label_visibility="collapsed",
-                key="sat_slider",
-                on_change=sync_satisfaction_slider
-            )
-        with sat_col2:
-            st.number_input(
-                "Satisfaction Input",
-                min_value=0.0,
-                max_value=1.0,
-                value=st.session_state.satisfaction_level,
-                step=0.01,
-                format="%.2f",
-                label_visibility="collapsed",
-                key="sat_input",
-                on_change=sync_satisfaction_input
+                help="Number of years the employee has worked at the company"
             )
         
-        satisfaction_level = st.session_state.satisfaction_level
-    
-    with row1_col2:
-        # Last Evaluation with both slider and number input
-        st.write("📊 **Last Evaluation Score**")
-        eval_col1, eval_col2 = st.columns([3, 1])
-        with eval_col1:
-            st.slider(
-                "Evaluation Slider",
-                min_value=0.0,
-                max_value=1.0,
-                value=st.session_state.last_evaluation,
-                step=0.01,
-                help="Last performance evaluation score (0 = Poor, 1 = Excellent)",
+        with col4:
+            st.markdown('<div style="margin-top: 10px;"><strong>📁 Number of Projects</strong></div>', unsafe_allow_html=True)
+            number_project = st.number_input(
+                "Projects",
+                min_value=1,
+                max_value=10,
+                value=4,
+                step=1,
                 label_visibility="collapsed",
-                key="eval_slider",
-                on_change=sync_evaluation_slider
-            )
-        with eval_col2:
-            st.number_input(
-                "Evaluation Input",
-                min_value=0.0,
-                max_value=1.0,
-                value=st.session_state.last_evaluation,
-                step=0.01,
-                format="%.2f",
-                label_visibility="collapsed",
-                key="eval_input",
-                on_change=sync_evaluation_input
+                help="Number of projects the employee is currently working on"
             )
         
-        last_evaluation = st.session_state.last_evaluation
-    
-    # ========================================================================
-    # ROW 2: Years at Company & Number of Projects (side by side)
-    # ========================================================================
-    row2_col1, row2_col2 = st.columns(2)
-    
-    with row2_col1:
-        # Time Spent at Company
-        time_spend_company = st.number_input(
-            "📅 Years at Company",
-            min_value=1,
-            max_value=40,
-            value=3,
-            step=1,
-            help="Number of years the employee has worked at the company"
-        )
-    
-    with row2_col2:
-        # Number of Projects
-        number_project = st.number_input(
-            "📁 Number of Projects",
-            min_value=1,
-            max_value=10,
-            value=4,
-            step=1,
-            help="Number of projects the employee is currently working on"
-        )
-    
-    # ========================================================================
-    # ROW 3: Average Monthly Hours
-    # ========================================================================
-    row3_col1, row3_col2 = st.columns(2)
-    
-    with row3_col1:
-        # Average Monthly Hours
-        average_monthly_hours = st.number_input(
-            "⏰ Average Monthly Hours",
-            min_value=80,
-            max_value=350,
-            value=200,
-            step=5,
-            help="Average number of hours worked per month"
-        )
+        with col5:
+            st.markdown('<div style="margin-top: 10px;"><strong>⏰ Avg. Monthly Hours</strong></div>', unsafe_allow_html=True)
+            average_monthly_hours = st.number_input(
+                "Hours",
+                min_value=80,
+                max_value=350,
+                value=200,
+                step=5,
+                label_visibility="collapsed",
+                help="Average number of hours worked per month"
+            )
     
     # Create input dictionary
     input_data = {
