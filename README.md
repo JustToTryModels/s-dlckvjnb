@@ -324,29 +324,3 @@ The organization is facing a dual crisis of **burnout and stagnation**, systemat
 | **The Fix** | Conduct "Stay Interviews" in these specific departments to identify local stressors immediately |
 
 ---
-
-## ⚠️ Limitations & Future Work
-
-### Limitations
-
-- Model trained on historical data; may not capture recent organizational changes
-- Does not account for external factors (economy, industry trends, competitor hiring)
-- Dataset may not be representative of all industries or company sizes
-- Binary prediction doesn't capture the timeline of when an employee might leave
-
-### Future Improvements
-
-- 🔄 Incorporate exit interview data for richer insights
-- 📊 Test ensemble methods (XGBoost, LightGBM) for comparison
-- 📱 Build an interactive HR dashboard with real-time monitoring
-- ⏰ Develop a time-to-attrition model (survival analysis)
-- 🔍 Add SHAP values for individual prediction explanations
-
----
-
-Made with ❤️ for better HR analytics
-
-</div>
-
-
-[![Open in Kaggle](https://kaggle.com/static/images/open-in-kaggle.svg)](https://www.kaggle.com/datasets/giripujar/hr-analytics)
