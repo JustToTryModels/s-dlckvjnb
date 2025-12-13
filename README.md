@@ -125,7 +125,7 @@ The dataset used is the **HR Analytics Dataset** from Kaggle.
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/employee-churn-prediction.git
+   git clone https://github.com/MarpakaPradeepSai/employee-churn-prediction.git
    cd employee-churn-prediction
    ```
 
