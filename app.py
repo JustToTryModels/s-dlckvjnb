@@ -90,6 +90,26 @@ st.markdown("""
         padding: 1rem;
         margin: 1rem 0;
     }
+    .progress-bar-container {
+        width: 100%;
+        background-color: #e9ecef;
+        border-radius: 10px;
+        margin: 5px 0 15px 0;
+        height: 25px;
+        overflow: hidden;
+    }
+    .progress-bar-green {
+        height: 100%;
+        background-color: #28a745;
+        border-radius: 10px;
+        transition: width 0.5s ease-in-out;
+    }
+    .progress-bar-red {
+        height: 100%;
+        background-color: #dc3545;
+        border-radius: 10px;
+        transition: width 0.5s ease-in-out;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -200,19 +220,51 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
+    # Initialize session state for syncing slider and number input
+    if 'satisfaction_level' not in st.session_state:
+        st.session_state.satisfaction_level = 0.5
+    if 'last_evaluation' not in st.session_state:
+        st.session_state.last_evaluation = 0.7
+    
     # Create two columns for inputs
     col1, col2 = st.columns(2)
     
     with col1:
-        # Satisfaction Level
-        satisfaction_level = st.slider(
-            "😊 Satisfaction Level",
-            min_value=0.0,
-            max_value=1.0,
-            value=0.5,
-            step=0.01,
-            help="Employee satisfaction level (0 = Very Dissatisfied, 1 = Very Satisfied)"
-        )
+        # Satisfaction Level with both slider and number input
+        st.write("😊 **Satisfaction Level**")
+        sat_col1, sat_col2 = st.columns([3, 1])
+        with sat_col1:
+            satisfaction_slider = st.slider(
+                "Satisfaction Slider",
+                min_value=0.0,
+                max_value=1.0,
+                value=st.session_state.satisfaction_level,
+                step=0.01,
+                help="Employee satisfaction level (0 = Very Dissatisfied, 1 = Very Satisfied)",
+                label_visibility="collapsed",
+                key="sat_slider"
+            )
+        with sat_col2:
+            satisfaction_input = st.number_input(
+                "Satisfaction Input",
+                min_value=0.0,
+                max_value=1.0,
+                value=st.session_state.satisfaction_level,
+                step=0.01,
+                format="%.2f",
+                label_visibility="collapsed",
+                key="sat_input"
+            )
+        
+        # Sync slider and input
+        if satisfaction_slider != st.session_state.satisfaction_level:
+            satisfaction_level = satisfaction_slider
+            st.session_state.satisfaction_level = satisfaction_slider
+        elif satisfaction_input != st.session_state.satisfaction_level:
+            satisfaction_level = satisfaction_input
+            st.session_state.satisfaction_level = satisfaction_input
+        else:
+            satisfaction_level = st.session_state.satisfaction_level
         
         # Time Spent at Company
         time_spend_company = st.number_input(
@@ -245,21 +297,46 @@ def main():
             help="Number of projects the employee is currently working on"
         )
         
-        # Last Evaluation
-        last_evaluation = st.slider(
-            "📊 Last Evaluation Score",
-            min_value=0.0,
-            max_value=1.0,
-            value=0.7,
-            step=0.01,
-            help="Last performance evaluation score (0 = Poor, 1 = Excellent)"
-        )
+        # Last Evaluation with both slider and number input
+        st.write("📊 **Last Evaluation Score**")
+        eval_col1, eval_col2 = st.columns([3, 1])
+        with eval_col1:
+            evaluation_slider = st.slider(
+                "Evaluation Slider",
+                min_value=0.0,
+                max_value=1.0,
+                value=st.session_state.last_evaluation,
+                step=0.01,
+                help="Last performance evaluation score (0 = Poor, 1 = Excellent)",
+                label_visibility="collapsed",
+                key="eval_slider"
+            )
+        with eval_col2:
+            evaluation_input = st.number_input(
+                "Evaluation Input",
+                min_value=0.0,
+                max_value=1.0,
+                value=st.session_state.last_evaluation,
+                step=0.01,
+                format="%.2f",
+                label_visibility="collapsed",
+                key="eval_input"
+            )
+        
+        # Sync slider and input
+        if evaluation_slider != st.session_state.last_evaluation:
+            last_evaluation = evaluation_slider
+            st.session_state.last_evaluation = evaluation_slider
+        elif evaluation_input != st.session_state.last_evaluation:
+            last_evaluation = evaluation_input
+            st.session_state.last_evaluation = evaluation_input
+        else:
+            last_evaluation = st.session_state.last_evaluation
     
     # ========================================================================
-    # INPUT SUMMARY
+    # INPUT SUMMARY (Collapsible Dropdown)
     # ========================================================================
     st.markdown("---")
-    st.subheader("📋 Input Summary")
     
     # Create input dictionary
     input_data = {
@@ -270,27 +347,28 @@ def main():
         'last_evaluation': last_evaluation
     }
     
-    # Display as a nice table
-    summary_df = pd.DataFrame({
-        'Feature': [
-            '😊 Satisfaction Level',
-            '📅 Years at Company',
-            '⏰ Average Monthly Hours',
-            '📁 Number of Projects',
-            '📊 Last Evaluation'
-        ],
-        'Value': [
-            f"{satisfaction_level:.2f}",
-            f"{time_spend_company} years",
-            f"{average_monthly_hours} hours",
-            f"{number_project} projects",
-            f"{last_evaluation:.2f}"
-        ]
-    })
-    
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.dataframe(summary_df, use_container_width=True, hide_index=True)
+    # Display as a collapsible expander
+    with st.expander("📋 Click to View Input Summary", expanded=False):
+        summary_df = pd.DataFrame({
+            'Feature': [
+                '😊 Satisfaction Level',
+                '📅 Years at Company',
+                '⏰ Average Monthly Hours',
+                '📁 Number of Projects',
+                '📊 Last Evaluation'
+            ],
+            'Value': [
+                f"{satisfaction_level:.2f}",
+                f"{time_spend_company} years",
+                f"{average_monthly_hours} hours",
+                f"{number_project} projects",
+                f"{last_evaluation:.2f}"
+            ]
+        })
+        
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.dataframe(summary_df, use_container_width=True, hide_index=True)
     
     # ========================================================================
     # PREDICTION BUTTON
@@ -344,13 +422,21 @@ def main():
         with col2:
             st.markdown("### 📊 Prediction Probabilities")
             
-            # Stay probability
+            # Stay probability with GREEN bar
             st.write(f"**Probability of Staying:** {prob_stay:.1f}%")
-            st.progress(prob_stay / 100)
+            st.markdown(f"""
+            <div class="progress-bar-container">
+                <div class="progress-bar-green" style="width: {prob_stay}%;"></div>
+            </div>
+            """, unsafe_allow_html=True)
             
-            # Leave probability
+            # Leave probability with RED bar
             st.write(f"**Probability of Leaving:** {prob_leave:.1f}%")
-            st.progress(prob_leave / 100)
+            st.markdown(f"""
+            <div class="progress-bar-container">
+                <div class="progress-bar-red" style="width: {prob_leave}%;"></div>
+            </div>
+            """, unsafe_allow_html=True)
         
         # ====================================================================
         # CONFIDENCE LEVEL
@@ -382,46 +468,6 @@ def main():
                 <p style="margin: 0.5rem 0 0 0;"><strong>Confidence Score: {max_prob:.1f}%</strong></p>
             </div>
             """, unsafe_allow_html=True)
-        
-        # ====================================================================
-        # RECOMMENDATIONS (only if prediction is LEAVE)
-        # ====================================================================
-        if prediction == 1:
-            st.markdown("---")
-            st.subheader("💡 Retention Recommendations")
-            
-            # Personalized recommendations based on input values
-            recommendations = []
-            
-            if satisfaction_level < 0.5:
-                recommendations.append("📉 **Low Satisfaction Detected:** Schedule a one-on-one meeting to understand concerns and improve job satisfaction.")
-            
-            if average_monthly_hours > 250:
-                recommendations.append("⏰ **High Working Hours:** Employee may be overworked. Consider redistributing workload or hiring additional support.")
-            elif average_monthly_hours < 150:
-                recommendations.append("⏰ **Low Working Hours:** Employee may feel underutilized. Consider assigning more meaningful projects.")
-            
-            if number_project > 5:
-                recommendations.append("📁 **Too Many Projects:** Reduce project load to prevent burnout and improve focus.")
-            elif number_project < 3:
-                recommendations.append("📁 **Few Projects:** Employee may need more engagement. Consider involving them in new initiatives.")
-            
-            if time_spend_company >= 4 and last_evaluation > 0.7:
-                recommendations.append("🎯 **Experienced & High Performer:** Consider promotion opportunities or leadership roles to retain this valuable employee.")
-            
-            if last_evaluation < 0.5:
-                recommendations.append("📊 **Low Evaluation Score:** Provide training, mentorship, and clear performance improvement plans.")
-            
-            # Default recommendations
-            recommendations.extend([
-                "💰 **Review Compensation:** Ensure salary and benefits are competitive with market rates.",
-                "🚀 **Career Development:** Discuss growth opportunities and create a clear career path.",
-                "🏆 **Recognition:** Acknowledge contributions and achievements regularly."
-            ])
-            
-            # Display recommendations
-            for rec in recommendations[:6]:  # Show top 6 recommendations
-                st.warning(rec)
         
         # ====================================================================
         # DETAILED INPUT BREAKDOWN
