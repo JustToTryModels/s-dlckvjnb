@@ -333,11 +333,6 @@ def main():
         else:
             last_evaluation = st.session_state.last_evaluation
     
-    # ========================================================================
-    # INPUT SUMMARY (Collapsible Dropdown)
-    # ========================================================================
-    st.markdown("---")
-    
     # Create input dictionary
     input_data = {
         'satisfaction_level': satisfaction_level,
@@ -346,29 +341,6 @@ def main():
         'number_project': number_project,
         'last_evaluation': last_evaluation
     }
-    
-    # Display as a collapsible expander
-    with st.expander("📋 Click to View Input Summary", expanded=False):
-        summary_df = pd.DataFrame({
-            'Feature': [
-                '😊 Satisfaction Level',
-                '📅 Years at Company',
-                '⏰ Average Monthly Hours',
-                '📁 Number of Projects',
-                '📊 Last Evaluation'
-            ],
-            'Value': [
-                f"{satisfaction_level:.2f}",
-                f"{time_spend_company} years",
-                f"{average_monthly_hours} hours",
-                f"{number_project} projects",
-                f"{last_evaluation:.2f}"
-            ]
-        })
-        
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            st.dataframe(summary_df, use_container_width=True, hide_index=True)
     
     # ========================================================================
     # PREDICTION BUTTON
@@ -470,10 +442,29 @@ def main():
             """, unsafe_allow_html=True)
         
         # ====================================================================
-        # DETAILED INPUT BREAKDOWN
+        # INPUT SUMMARY (Collapsible Dropdown) - Moved to end
         # ====================================================================
-        with st.expander("📋 View Detailed Input Data"):
-            st.dataframe(input_df.T.rename(columns={0: 'Value'}), use_container_width=True)
+        with st.expander("📋 Click to View Input Summary", expanded=False):
+            summary_df = pd.DataFrame({
+                'Feature': [
+                    '😊 Satisfaction Level',
+                    '📅 Years at Company',
+                    '⏰ Average Monthly Hours',
+                    '📁 Number of Projects',
+                    '📊 Last Evaluation'
+                ],
+                'Value': [
+                    f"{satisfaction_level:.2f}",
+                    f"{time_spend_company} years",
+                    f"{average_monthly_hours} hours",
+                    f"{number_project} projects",
+                    f"{last_evaluation:.2f}"
+                ]
+            })
+            
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                st.dataframe(summary_df, use_container_width=True, hide_index=True)
 
 # ============================================================================
 # RUN APPLICATION
