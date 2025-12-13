@@ -111,17 +111,6 @@ st.markdown("""
         transition: width 0.5s ease-in-out;
     }
     /* Blue expander styling */
-    .blue-expander .streamlit-expanderHeader {
-        background-color: #007bff !important;
-        color: white !important;
-        border-radius: 8px !important;
-        font-size: 1.2rem !important;
-        padding: 0.75rem !important;
-    }
-    .blue-expander .streamlit-expanderHeader:hover {
-        background-color: #0056b3 !important;
-    }
-    /* Custom expander styling */
     div[data-testid="stExpander"] {
         border: none !important;
     }
@@ -388,16 +377,16 @@ def main():
     }
     
     # ========================================================================
-    # PREDICTION BUTTON & INPUT SUMMARY (Same Line)
+    # PREDICTION BUTTON & INPUT SUMMARY (Centered, Same Row)
     # ========================================================================
     st.markdown("---")
     
-    btn_col1, btn_col2 = st.columns(2)
+    col_empty1, col_button, col_expander, col_empty2 = st.columns([0.5, 1, 1, 0.5])
     
-    with btn_col1:
+    with col_button:
         predict_button = st.button("🔮 Predict Employee Turnover", use_container_width=True)
     
-    with btn_col2:
+    with col_expander:
         with st.expander("📋 Click to View Input Summary", expanded=False):
             summary_df = pd.DataFrame({
                 'Feature': [
