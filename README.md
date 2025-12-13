@@ -323,6 +323,8 @@ The organization is facing a dual crisis of **burnout and stagnation**, systemat
 
 ---
 
+---
+
 <div align="center">
-  <img src="https://www.funimada.com/assets/images/cards/big/thank-you-33.gif" alt="Thank You" width="400">
+  <img src="https://www.funimada.com/assets/images/cards/big/thank-you-33.gif" alt="Thank You" width="500">
 </div>
