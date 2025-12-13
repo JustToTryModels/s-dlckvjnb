@@ -488,7 +488,7 @@ def main():
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        predict_button = st.button("🔮 Predict Employee Turnover", use_container_width=True)
+        predict_button = st.button("🔮 𝐏𝐫𝐞𝐝𝐢𝐜𝐭 𝐄𝐦𝐩𝐥𝐨𝐲𝐞𝐞 𝐓𝐮𝐫𝐧𝐨𝐯𝐞𝐫", use_container_width=True)
     
     # ========================================================================
     # PREDICTION RESULTS
