@@ -239,7 +239,7 @@ The organization is facing a dual crisis of **burnout and stagnation**, systemat
 | Metric | Employees Who Stayed | Employees Who Left | Key Insight |
 |--------|----------------------|--------------------|-------------|
 | Median Satisfaction | 0.69 | 0.41 | Low satisfaction is the common denominator for all departures |
-| Median Evaluation | 0.71 | 0.79 | We are systematically losing our highest-performing employees |
+| Median Evaluation | 0.71 | 0.79 | You are systematically losing your highest-performing employees |
 | Median Monthly Hours | 198 | 226 | Leavers are pushed significantly harder |
 | Promoted (Last 5 Yrs) | 1.8% | 0.3% | Promotions are a powerful yet neglected retention tool |
 
