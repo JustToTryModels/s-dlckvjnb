@@ -12,7 +12,7 @@ st.set_page_config(
     page_title="Employee Turnover Prediction",
     page_icon="👥",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # ============================================================================
@@ -20,7 +20,7 @@ st.set_page_config(
 # ============================================================================
 st.markdown("""
 <style>
-    /* Center the main content with max-width - FROM CODE 2 */
+    /* Center the main content with max-width */
     .block-container {
         max-width: 1200px !important;
         padding-left: 5rem !important;
@@ -411,41 +411,6 @@ def main():
         st.error("❌ Failed to load model. Please check the Hugging Face repository.")
         st.info(f"Repository: https://huggingface.co/{HF_REPO_ID}")
         return
-    
-    # ========================================================================
-    # SIDEBAR (COPIED EXACTLY FROM CODE-1)
-    # ========================================================================
-    with st.sidebar:
-        st.header("ℹ️ Model Information")
-        
-        st.markdown(f"""
-        <div class="metric-card">
-            <strong>🤗 Repository:</strong><br>{HF_REPO_ID}<br><br>
-            <strong>🤖 Algorithm:</strong><br>Random Forest Classifier<br><br>
-            <strong>📊 Features Used:</strong><br>{len(BEST_FEATURES)} features<br><br>
-            <strong>⚖️ Class Weight:</strong><br>Balanced
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("---")
-        
-        st.subheader("📋 Selected Features")
-        for i, feat in enumerate(BEST_FEATURES, 1):
-            feat_display = feat.replace('_', ' ').title()
-            st.write(f"{i}. {feat_display}")
-        
-        st.markdown("---")
-        
-        st.subheader("🎯 Target Variable")
-        st.info("""
-        **Prediction Classes:**
-        - **0 → Stay**: Employee likely to stay
-        - **1 → Leave**: Employee likely to leave
-        """)
-        
-        st.markdown("---")
-        
-        st.markdown(f"[🔗 View on Hugging Face](https://huggingface.co/{HF_REPO_ID})")
     
     # ========================================================================
     # MAIN INPUT SECTION
