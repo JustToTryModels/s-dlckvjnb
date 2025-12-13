@@ -1,3 +1,4 @@
+# Code-1
 import streamlit as st
 import joblib
 import json
@@ -20,14 +21,6 @@ st.set_page_config(
 # ============================================================================
 st.markdown("""
 <style>
-    /* Center the main content with max-width */
-    .block-container {
-        max-width: 1200px !important;
-        padding-left: 5rem !important;
-        padding-right: 5rem !important;
-        margin: 0 auto !important;
-    }
-    
     .main-header {
         font-size: 2.5rem;
         font-weight: bold;
