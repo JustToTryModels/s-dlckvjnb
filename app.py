@@ -69,7 +69,7 @@ st.markdown("""
         background-size: 300% 300%;
         color: white !important;
         font-size: 1.3rem;
-        font-weight: 900; /* CHANGED TO EXTRA BOLD (900) */
+        font-weight: bold;
         padding: 1rem 2rem;
         border-radius: 50px;
         border: 2px solid #4a90d9;
@@ -488,8 +488,7 @@ def main():
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        # Button text changed to uppercase to match request
-        predict_button = st.button("🔮 PREDICT EMPLOYEE TURNOVER", use_container_width=True)
+        predict_button = st.button("🔮 Predict Employee Turnover", use_container_width=True)
     
     # ========================================================================
     # PREDICTION RESULTS
