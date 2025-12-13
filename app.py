@@ -62,53 +62,65 @@ st.markdown("""
         border: 1px solid #b8daff;
     }
     
-    /* ===== ATTRACTIVE PREDICT BUTTON STYLING ===== */
+    /* ===== ATTRACTIVE PREDICT BUTTON STYLING - DARKER PROFESSIONAL THEME ===== */
     .stButton>button {
         width: 100%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-        background-size: 200% 200%;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #1a1a2e 75%, #16213e 100%);
+        background-size: 300% 300%;
         color: white !important;
         font-size: 1.3rem;
         font-weight: bold;
         padding: 1rem 2rem;
         border-radius: 50px;
-        border: none;
+        border: 2px solid #4a90d9;
         cursor: pointer;
         position: relative;
         overflow: hidden;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 4px 15px rgba(74, 144, 217, 0.3), 0 8px 30px rgba(26, 26, 46, 0.4);
         transition: all 0.3s ease;
-        animation: gradientShift 3s ease infinite, pulse 2s ease-in-out infinite;
+        animation: darkGradient 4s ease infinite, subtleGlow 2.5s ease-in-out infinite;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 2px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     }
     
-    /* Gradient animation */
-    @keyframes gradientShift {
+    /* Dark gradient animation */
+    @keyframes darkGradient {
         0% { background-position: 0% 50%; }
         50% { background-position: 100% 50%; }
         100% { background-position: 0% 50%; }
     }
     
-    /* Pulse animation */
-    @keyframes pulse {
-        0% { box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); }
-        50% { box-shadow: 0 8px 30px rgba(102, 126, 234, 0.6), 0 0 20px rgba(240, 147, 251, 0.3); }
-        100% { box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); }
+    /* Subtle glow animation */
+    @keyframes subtleGlow {
+        0% { 
+            box-shadow: 0 4px 15px rgba(74, 144, 217, 0.3), 0 8px 30px rgba(26, 26, 46, 0.4);
+            border-color: #4a90d9;
+        }
+        50% { 
+            box-shadow: 0 4px 20px rgba(74, 144, 217, 0.5), 0 8px 40px rgba(26, 26, 46, 0.5), 0 0 30px rgba(74, 144, 217, 0.2);
+            border-color: #6ba3e0;
+        }
+        100% { 
+            box-shadow: 0 4px 15px rgba(74, 144, 217, 0.3), 0 8px 30px rgba(26, 26, 46, 0.4);
+            border-color: #4a90d9;
+        }
     }
     
     /* Hover effects */
     .stButton>button:hover {
-        transform: translateY(-3px) scale(1.02);
-        box-shadow: 0 10px 40px rgba(102, 126, 234, 0.5), 0 0 30px rgba(240, 147, 251, 0.4);
-        animation: gradientShift 1.5s ease infinite;
+        transform: translateY(-4px) scale(1.02);
+        background: linear-gradient(135deg, #0f3460 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #1a1a2e 100%);
+        background-size: 300% 300%;
+        box-shadow: 0 8px 25px rgba(74, 144, 217, 0.5), 0 12px 40px rgba(26, 26, 46, 0.5), 0 0 50px rgba(74, 144, 217, 0.3);
+        border-color: #7bb3e8;
         color: white !important;
     }
     
     /* Active/Click effect */
     .stButton>button:active {
-        transform: translateY(1px) scale(0.98);
-        box-shadow: 0 2px 10px rgba(102, 126, 234, 0.4);
+        transform: translateY(2px) scale(0.98);
+        box-shadow: 0 2px 10px rgba(74, 144, 217, 0.4), 0 4px 20px rgba(26, 26, 46, 0.3);
         color: white !important;
     }
     
@@ -123,31 +135,26 @@ st.markdown("""
         background: linear-gradient(
             90deg,
             transparent,
-            rgba(255, 255, 255, 0.3),
+            rgba(255, 255, 255, 0.15),
             transparent
         );
-        transition: left 0.5s ease;
+        transition: left 0.6s ease;
     }
     
     .stButton>button:hover::before {
         left: 100%;
     }
     
-    /* Ripple effect on focus */
+    /* Focus effect */
     .stButton>button:focus {
         outline: none;
-        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.3), 0 10px 40px rgba(102, 126, 234, 0.5);
+        box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.4), 0 4px 20px rgba(74, 144, 217, 0.5), 0 8px 30px rgba(26, 26, 46, 0.4);
         color: white !important;
     }
     
-    /* Icon bounce animation */
+    /* Smooth hover animation */
     .stButton>button:hover {
-        animation: gradientShift 1.5s ease infinite, bounce 0.5s ease;
-    }
-    
-    @keyframes bounce {
-        0%, 100% { transform: translateY(-3px) scale(1.02); }
-        50% { transform: translateY(-8px) scale(1.02); }
+        animation: darkGradient 2s ease infinite;
     }
     
     /* Ensure text stays white in ALL states */
