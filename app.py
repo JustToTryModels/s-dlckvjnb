@@ -72,7 +72,7 @@ st.markdown("""
         background-size: 400% 400%;
         color: white !important;
         font-size: 1.4rem;
-        font-weight: bold;
+        font-weight: 900 !important;
         padding: 1.2rem 2.5rem;
         border-radius: 50px;
         border: none !important;
@@ -141,6 +141,7 @@ st.markdown("""
         color: white !important;
         border: none !important;
         outline: none !important;
+        font-weight: 900 !important;
     }
     
     /* Active/Click - Neon burst effect */
@@ -158,6 +159,7 @@ st.markdown("""
         color: white !important;
         border: none !important;
         outline: none !important;
+        font-weight: 900 !important;
     }
     
     /* Shimmer/shine effect overlay */
@@ -204,6 +206,7 @@ st.markdown("""
             0 8px 30px rgba(255, 140, 0, 0.3),
             0 0 40px rgba(64, 224, 208, 0.2);
         color: white !important;
+        font-weight: 900 !important;
     }
     
     /* Focus-visible - Remove blue border completely */
@@ -214,6 +217,7 @@ st.markdown("""
             0 4px 15px rgba(255, 0, 128, 0.4),
             0 8px 30px rgba(255, 140, 0, 0.3),
             0 0 40px rgba(64, 224, 208, 0.2);
+        font-weight: 900 !important;
     }
     
     /* Remove focus ring from button container as well */
@@ -244,6 +248,7 @@ st.markdown("""
         color: white !important;
         outline: none !important;
         border: none !important;
+        font-weight: 900 !important;
     }
     
     .info-box {
