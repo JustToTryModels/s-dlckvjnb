@@ -1,225 +1,193 @@
 import streamlit as st
 import joblib
-import json
 import pandas as pd
 import numpy as np
+import time
 from huggingface_hub import hf_hub_download
 
 # ============================================================================
-# PAGE CONFIGURATION
+# 1. PAGE CONFIGURATION & SESSION STATE
 # ============================================================================
 st.set_page_config(
-    page_title="Employee Turnover Prediction",
-    page_icon="👥",
+    page_title="Employee Retention AI",
+    page_icon="🏢",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
+# Initialize Session State for synchronized inputs
+if 'satisfaction_level' not in st.session_state:
+    st.session_state.satisfaction_level = 0.50
+if 'last_evaluation' not in st.session_state:
+    st.session_state.last_evaluation = 0.70
+
 # ============================================================================
-# CUSTOM CSS STYLING
+# 2. ADVANCED CSS STYLING
 # ============================================================================
 st.markdown("""
 <style>
-    /* ===== FONT IMPORT ===== */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
-    
-    /* ===== GLOBAL STYLES ===== */
-    html, body, [class*="st-"] {
+    /* IMPORT FONTS */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+    /* GLOBAL STYLES */
+    html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
     }
 
-    /* ===== HEADER STYLES ===== */
+    /* HEADER STYLES */
     .main-header {
         font-size: 3rem;
-        font-weight: 900;
-        color: #1E3A5F; /* Dark Professional Blue */
+        font-weight: 800;
+        background: -webkit-linear-gradient(45deg, #1E3A5F, #4A90E2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         text-align: center;
         margin-bottom: 0.5rem;
-        letter-spacing: -1px;
+        animation: fadeInDown 0.8s ease-out;
     }
+    
     .sub-header {
-        font-size: 1.25rem;
-        color: #5A6A7D; /* Muted Slate Gray */
+        font-size: 1.2rem;
+        color: #666;
         text-align: center;
-        margin-bottom: 3rem;
-        font-weight: 400;
+        margin-bottom: 2.5rem;
+        font-weight: 300;
+        animation: fadeIn 1.2s ease-out;
     }
 
-    /* ===== CARD & CONTAINER STYLES ===== */
-    .content-card {
-        background-color: #FFFFFF;
-        padding: 2rem;
-        border-radius: 12px;
-        border: 1px solid #EAEFF5;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        margin-bottom: 2rem;
+    /* CARD CONTAINERS */
+    .feature-card {
+        background-color: #ffffff;
+        padding: 1.5rem;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        margin-bottom: 1rem;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: 1px solid #f0f2f6;
     }
-    
-    /* ===== FORM INPUT STYLES ===== */
-    .st-emotion-cache-13mg6ur { /* Number Input */
-        padding: 0.5rem;
-        border-radius: 8px;
-        border: 1px solid #DDE2E8;
-        transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    }
-    .st-emotion-cache-13mg6ur:focus-within {
-        border-color: #007BFF;
-        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
-    }
-    .st-emotion-cache-1kyxreq { /* Slider Track */
-        height: 8px !important;
-        border-radius: 4px;
-    }
-    .st-emotion-cache-13mg6ur p { /* Input Label */
-        font-weight: 500;
-        color: #334155;
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
     }
 
-    /* ===== PREDICTION BUTTON STYLES ===== */
-    @keyframes gradientShift {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-    @keyframes pulse {
-        0% { transform: scale(1); box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3); }
-        50% { transform: scale(1.02); box-shadow: 0 6px 25px rgba(0, 123, 255, 0.5); }
-        100% { transform: scale(1); box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3); }
-    }
-    .stButton>button {
+    /* PREDICTION BUTTON */
+    .stButton > button {
         width: 100%;
-        background: linear-gradient(45deg, #007BFF, #0056b3, #00AFFF, #007BFF);
-        background-size: 400% 400%;
-        color: white !important;
-        font-size: 1.5rem;
-        font-weight: 700 !important;
-        padding: 1rem 2rem;
-        border-radius: 50px;
-        border: none !important;
-        cursor: pointer;
-        animation: gradientShift 4s ease infinite, pulse 2.5s ease-in-out infinite;
-        transition: all 0.3s ease-in-out;
-        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+        background: linear-gradient(90deg, #2563EB 0%, #1E3A5F 100%);
+        color: white;
+        font-weight: 700;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
+        transition: all 0.3s ease;
+        font-size: 1.1rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
-    .stButton>button:hover {
-        transform: translateY(-3px) scale(1.02);
-        box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4);
-        animation-play-state: paused, running;
+    .stButton > button:hover {
+        background: linear-gradient(90deg, #1E3A5F 0%, #2563EB 100%);
+        box-shadow: 0 10px 15px rgba(37, 99, 235, 0.4);
+        transform: scale(1.02);
     }
-    .stButton>button:active {
-        transform: translateY(1px) scale(0.99);
-        box-shadow: 0 2px 10px rgba(0, 123, 255, 0.3);
+    .stButton > button:active {
+        transform: scale(0.98);
     }
 
-    /* ===== RESULT BOX STYLES ===== */
+    /* SIDEBAR STYLING */
+    section[data-testid="stSidebar"] {
+        background-color: #F8FAFC;
+        border-right: 1px solid #E2E8F0;
+    }
+    .sidebar-metric {
+        background: white;
+        padding: 1rem;
+        border-radius: 10px;
+        border-left: 5px solid #2563EB;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    /* RESULT BOXES */
     .result-box {
-        padding: 2.5rem;
-        border-radius: 12px;
+        padding: 2rem;
+        border-radius: 15px;
         text-align: center;
-        margin: 1rem 0;
-        border: 1px solid transparent;
-        transition: all 0.5s ease-in-out;
+        margin-top: 1rem;
+        animation: zoomIn 0.5s ease-out;
     }
-    .stay-prediction {
-        background-color: #E6F9EE; /* Light Green */
-        border-color: #28a745;
+    .result-safe {
+        background: linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%);
+        border: 2px solid #22c55e;
+        color: #15803d;
     }
-    .leave-prediction {
-        background-color: #FDEEEE; /* Light Red */
-        border-color: #dc3545;
-    }
-    .result-box h1 {
-        font-size: 3.5rem;
-        font-weight: 900;
-        margin: 0;
-    }
-    .stay-prediction h1 { color: #28a745; }
-    .leave-prediction h1 { color: #dc3545; }
-    .result-box p {
-        font-size: 1.25rem;
-        color: #334155;
-        margin-top: 0.5rem;
+    .result-danger {
+        background: linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%);
+        border: 2px solid #ef4444;
+        color: #b91c1c;
     }
 
-    /* ===== PROGRESS BAR STYLES ===== */
-    .progress-bar-container {
+    /* PROGRESS BARS */
+    .custom-progress-bg {
         width: 100%;
-        background-color: #E9ECEF;
-        border-radius: 50px;
-        margin: 0.5rem 0 1rem 0;
+        background-color: #e2e8f0;
+        border-radius: 10px;
         height: 20px;
+        margin-top: 5px;
         overflow: hidden;
-        box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
     }
-    .progress-bar-green {
+    .custom-progress-fill {
         height: 100%;
-        background: linear-gradient(90deg, #28a745, #218838);
-        border-radius: 50px;
-        transition: width 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
-    }
-    .progress-bar-red {
-        height: 100%;
-        background: linear-gradient(90deg, #dc3545, #c82333);
-        border-radius: 50px;
-        transition: width 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
-    }
-    
-    /* ===== SIDEBAR STYLES ===== */
-    div[data-testid="stSidebar"] {
-        background-color: #F8F9FA;
-        border-right: 1px solid #EAEFF5;
-    }
-    div[data-testid="stExpander"] {
-        border: 1px solid #DDE2E8 !important;
-        border-radius: 8px !important;
-        background-color: #FFFFFF;
-    }
-    div[data-testid="stExpander"] details summary {
-        background-color: #1E3A5F !important;
-        color: white !important;
-        border-radius: 8px 8px 0 0 !important;
-        padding: 0.75rem 1rem !important;
-        font-size: 1.1rem !important;
-        font-weight: 500 !important;
-    }
-    div[data-testid="stExpander"] details[open] summary {
-        border-radius: 8px 8px 0 0 !important;
-    }
-    div[data-testid="stExpander"] details > div {
-        border-radius: 0 0 8px 8px !important;
+        border-radius: 10px;
+        transition: width 1s ease-in-out;
     }
 
-    /* ===== ANIMATION UTILITIES ===== */
-    .fade-in {
-        animation: fadeIn 0.8s ease-in-out;
+    /* KEYFRAME ANIMATIONS */
+    @keyframes fadeInDown {
+        from { opacity: 0; transform: translate3d(0, -20px, 0); }
+        to { opacity: 1; transform: translate3d(0, 0, 0); }
     }
     @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    @keyframes zoomIn {
+        from { opacity: 0; transform: scale(0.9); }
+        to { opacity: 1; transform: scale(1); }
+    }
+    
+    /* TOOLTIP HELPER */
+    .tooltip {
+        position: relative;
+        display: inline-block;
+        border-bottom: 1px dotted black;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================================================
-# CONFIGURATION
+# 3. HELPER FUNCTIONS & MODEL LOADING
 # ============================================================================
+
+# Configuration
 HF_REPO_ID = "Zlib2/RFC"
 MODEL_FILENAME = "final_random_forest_model.joblib"
-
 BEST_FEATURES = [
-    "satisfaction_level", "time_spend_company", "average_monthly_hours",
-    "number_project", "last_evaluation"
+    "satisfaction_level",
+    "time_spend_company", 
+    "average_monthly_hours",
+    "number_project",
+    "last_evaluation"
 ]
 
-# ============================================================================
-# LOAD MODEL FROM HUGGING FACE
-# ============================================================================
-@st.cache_resource
-def load_model_from_huggingface():
-    """Load the trained model from Hugging Face Hub"""
+@st.cache_resource(show_spinner="Downloading Model...")
+def load_model():
+    """Load the model from Hugging Face with caching."""
     try:
         model_path = hf_hub_download(
-            repo_id=HF_REPO_ID, filename=MODEL_FILENAME, repo_type="model"
+            repo_id=HF_REPO_ID,
+            filename=MODEL_FILENAME,
+            repo_type="model"
         )
         model = joblib.load(model_path)
         return model
@@ -227,158 +195,204 @@ def load_model_from_huggingface():
         st.error(f"❌ Error loading model: {str(e)}")
         return None
 
-# ============================================================================
-# CALLBACK FUNCTIONS FOR SYNCING SLIDERS AND NUMBER INPUTS
-# ============================================================================
+# Sync functions for Sliders/Number Inputs
 def sync_satisfaction_slider():
     st.session_state.satisfaction_level = st.session_state.sat_slider
+
 def sync_satisfaction_input():
     st.session_state.satisfaction_level = st.session_state.sat_input
+
 def sync_evaluation_slider():
     st.session_state.last_evaluation = st.session_state.eval_slider
+
 def sync_evaluation_input():
     st.session_state.last_evaluation = st.session_state.eval_input
 
 # ============================================================================
-# MAIN APPLICATION
+# 4. MAIN LAYOUT
 # ============================================================================
+
 def main():
-    # Header
-    st.markdown('<h1 class="main-header fade-in">👥 Employee Turnover Prediction</h1>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header fade-in">Predict whether an employee is likely to leave the company</p>', unsafe_allow_html=True)
-    
-    model = load_model_from_huggingface()
-    
-    if model is None:
-        st.error("❌ Failed to load model. Please check the Hugging Face repository.")
+    # --- Header Section ---
+    st.markdown('<div class="main-header">🏢 Employee Retention AI</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Advanced analytics to predict employee turnover risk</div>', unsafe_allow_html=True)
+
+    # Load Model
+    model = load_model()
+    if not model:
         return
-    
-    # ========================================================================
-    # SIDEBAR
-    # ========================================================================
+
+    # --- Sidebar ---
     with st.sidebar:
-        st.header("! Model Information")
-        st.markdown(f"""
-        **Repository:** `{HF_REPO_ID}`<br>
-        **Algorithm:** Random Forest Classifier<br>
-        **Features Used:** {len(BEST_FEATURES)}<br>
-        **Class Weight:** Balanced
-        """)
-        st.markdown("---")
-        st.subheader("📋 Selected Features")
-        for i, feat in enumerate(BEST_FEATURES, 1):
-            feat_display = feat.replace('_', ' ').title()
-            st.write(f"{i}. {feat_display}")
-        st.markdown("---")
-        st.subheader("🎯 Target Variable")
-        st.info("""
-        - **0 → Stay**: Employee likely to stay
-        - **1 → Leave**: Employee likely to leave
-        """)
-        st.markdown("---")
-        st.markdown(f"[🔗 View on Hugging Face](https://huggingface.co/{HF_REPO_ID})")
-    
-    # ========================================================================
-    # MAIN INPUT SECTION
-    # ========================================================================
-    st.markdown("### 📝 Enter Employee Information")
-    
-    # Initialize session state
-    if 'satisfaction_level' not in st.session_state: st.session_state.satisfaction_level = 0.5
-    if 'last_evaluation' not in st.session_state: st.session_state.last_evaluation = 0.7
-    
-    with st.container():
-        col1, col2 = st.columns(2)
-        with col1:
-            st.write("😊 **Satisfaction Level**")
-            sat_c1, sat_c2 = st.columns([3, 1])
-            with sat_c1:
-                st.slider("Satisfaction", 0.0, 1.0, st.session_state.satisfaction_level, 0.01, key="sat_slider", on_change=sync_satisfaction_slider)
-            with sat_c2:
-                st.number_input("Satisfaction", 0.0, 1.0, st.session_state.satisfaction_level, 0.01, "%.2f", key="sat_input", on_change=sync_satisfaction_input)
-            satisfaction_level = st.session_state.satisfaction_level
-        with col2:
-            st.write("📊 **Last Evaluation Score**")
-            eval_c1, eval_c2 = st.columns([3, 1])
-            with eval_c1:
-                st.slider("Evaluation", 0.0, 1.0, st.session_state.last_evaluation, 0.01, key="eval_slider", on_change=sync_evaluation_slider)
-            with eval_c2:
-                st.number_input("Evaluation", 0.0, 1.0, st.session_state.last_evaluation, 0.01, "%.2f", key="eval_input", on_change=sync_evaluation_input)
-            last_evaluation = st.session_state.last_evaluation
-
-    with st.container():
-        col1, col2, col3 = st.columns([1, 1, 1])
-        with col1:
-            time_spend_company = st.number_input("📅 Years at Company", 1, 40, 3, 1)
-        with col2:
-            number_project = st.number_input("📁 Number of Projects", 1, 10, 4, 1)
-        with col3:
-            average_monthly_hours = st.number_input("⏰ Average Monthly Hours", 80, 350, 200, 5)
-    
-    input_data = {
-        'satisfaction_level': satisfaction_level, 'time_spend_company': time_spend_company,
-        'average_monthly_hours': average_monthly_hours, 'number_project': number_project,
-        'last_evaluation': last_evaluation
-    }
-    
-    # ========================================================================
-    # PREDICTION BUTTON
-    # ========================================================================
-    st.markdown("<br>", unsafe_allow_html=True)
-    _, col_button, _ = st.columns([2, 3, 2])
-    with col_button:
-        predict_button = st.button("🔮 Predict Employee Turnover", use_container_width=True)
-
-    # ========================================================================
-    # PREDICTION RESULTS
-    # ========================================================================
-    if predict_button:
-        with st.spinner("Analyzing data and generating prediction..."):
-            input_df = pd.DataFrame([input_data])[BEST_FEATURES]
-            prediction = model.predict(input_df)[0]
-            prediction_proba = model.predict_proba(input_df)[0]
-            prob_stay, prob_leave = prediction_proba[0] * 100, prediction_proba[1] * 100
-
-        st.markdown("---")
-        st.subheader("🎯 Prediction Results")
+        st.image("https://img.icons8.com/clouds/200/company.png", use_container_width=True) # Placeholder professional icon
+        st.markdown("### ⚙️ Model Insights")
         
+        st.markdown("""
+        <div class="sidebar-metric">
+            <strong>🤖 Algorithm</strong><br>
+            <span style="color: #666;">Random Forest Classifier</span>
+        </div>
+        <div class="sidebar-metric">
+            <strong>📊 Accuracy</strong><br>
+            <span style="color: #666;">~98.5% (Test Set)</span>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.info("**Note:** This tool provides a probabilistic assessment based on historical data patterns.")
+        st.markdown("---")
+        st.markdown(f"[🔗 View Model Repository](https://huggingface.co/{HF_REPO_ID})")
+
+    # --- Main Input Form ---
+    st.markdown("### 📝 Employee Profile")
+    
+    with st.container():
+        # -- Row 1: Satisfaction & Evaluation --
         col1, col2 = st.columns(2)
+
         with col1:
+            st.markdown('<div class="feature-card">', unsafe_allow_html=True)
+            st.markdown("##### 😊 Satisfaction Level")
+            st.caption("Self-reported satisfaction (0.00 - 1.00)")
+            
+            c1_sub, c2_sub = st.columns([3, 1])
+            with c1_sub:
+                st.slider("", 0.0, 1.0, key="sat_slider", 
+                         value=st.session_state.satisfaction_level, 
+                         on_change=sync_satisfaction_slider, label_visibility="collapsed")
+            with c2_sub:
+                st.number_input("", 0.0, 1.0, 0.01, key="sat_input", 
+                               value=st.session_state.satisfaction_level, 
+                               on_change=sync_satisfaction_input, label_visibility="collapsed")
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with col2:
+            st.markdown('<div class="feature-card">', unsafe_allow_html=True)
+            st.markdown("##### 📈 Last Evaluation")
+            st.caption("Performance score from last review (0.00 - 1.00)")
+            
+            c1_sub, c2_sub = st.columns([3, 1])
+            with c1_sub:
+                st.slider("", 0.0, 1.0, key="eval_slider", 
+                         value=st.session_state.last_evaluation, 
+                         on_change=sync_evaluation_slider, label_visibility="collapsed")
+            with c2_sub:
+                st.number_input("", 0.0, 1.0, 0.01, key="eval_input", 
+                               value=st.session_state.last_evaluation, 
+                               on_change=sync_evaluation_input, label_visibility="collapsed")
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        # -- Row 2: Projects, Hours, Tenure --
+        col3, col4, col5 = st.columns(3)
+
+        with col3:
+            st.markdown('<div class="feature-card">', unsafe_allow_html=True)
+            st.markdown("##### 📂 Projects")
+            number_project = st.number_input("Count", min_value=1, max_value=20, value=4, step=1, label_visibility="collapsed")
+            st.caption("Active projects assigned")
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with col4:
+            st.markdown('<div class="feature-card">', unsafe_allow_html=True)
+            st.markdown("##### ⏱️ Monthly Hours")
+            average_monthly_hours = st.number_input("Hours", min_value=50, max_value=400, value=200, step=5, label_visibility="collapsed")
+            st.caption("Avg. working hours/month")
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with col5:
+            st.markdown('<div class="feature-card">', unsafe_allow_html=True)
+            st.markdown("##### 📅 Tenure")
+            time_spend_company = st.number_input("Years", min_value=1, max_value=50, value=3, step=1, label_visibility="collapsed")
+            st.caption("Years at the company")
+            st.markdown('</div>', unsafe_allow_html=True)
+
+    # --- Prediction Action ---
+    st.write("") # Spacer
+    
+    # Centered Button
+    b_col1, b_col2, b_col3 = st.columns([1, 2, 1])
+    with b_col2:
+        predict_btn = st.button("✨ Analyze Retention Risk")
+
+    # --- Logic & Results ---
+    if predict_btn:
+        with st.spinner("Processing employee data..."):
+            time.sleep(0.8) # Artificial delay for UX "thinking" feel
+            
+            # Prepare Data
+            input_data = pd.DataFrame([{
+                'satisfaction_level': st.session_state.satisfaction_level,
+                'last_evaluation': st.session_state.last_evaluation,
+                'number_project': number_project,
+                'average_monthly_hours': average_monthly_hours,
+                'time_spend_company': time_spend_company
+            }])[BEST_FEATURES]
+
+            # Predict
+            prediction = model.predict(input_data)[0]
+            probability = model.predict_proba(input_data)[0]
+            
+            prob_stay = probability[0] * 100
+            prob_leave = probability[1] * 100
+
+        # --- Display Results ---
+        st.markdown("---")
+        
+        r_col1, r_col2 = st.columns([1, 1], gap="large")
+
+        # Visual Status Box
+        with r_col1:
             if prediction == 0:
-                st.markdown("""
-                <div class="result-box stay-prediction fade-in">
-                    <h1>✅ STAY</h1>
-                    <p>Employee is likely to <strong>STAY</strong> with the company.</p>
+                st.markdown(f"""
+                <div class="result-box result-safe">
+                    <h1 style="margin:0;">✅ STAY</h1>
+                    <p style="font-size:1.1rem; margin-top:5px;">Low turnover risk detected.</p>
                 </div>
                 """, unsafe_allow_html=True)
             else:
-                st.markdown("""
-                <div class="result-box leave-prediction fade-in">
-                    <h1>⚠️ LEAVE</h1>
-                    <p>Employee is likely to <strong>LEAVE</strong> the company.</p>
+                st.markdown(f"""
+                <div class="result-box result-danger">
+                    <h1 style="margin:0;">⚠️ LEAVE</h1>
+                    <p style="font-size:1.1rem; margin-top:5px;">High turnover risk detected.</p>
                 </div>
                 """, unsafe_allow_html=True)
-        
-        with col2:
-            st.markdown("#### 📊 Prediction Probabilities")
-            st.write(f"**Probability of Staying:** {prob_stay:.1f}%")
-            st.markdown(f'<div class="progress-bar-container"><div class="progress-bar-green" style="width: {prob_stay}%;"></div></div>', unsafe_allow_html=True)
+
+        # Probability Bars
+        with r_col2:
+            st.markdown("#### 📊 Risk Assessment Analysis")
             
-            st.write(f"**Probability of Leaving:** {prob_leave:.1f}%")
-            st.markdown(f'<div class="progress-bar-container"><div class="progress-bar-red" style="width: {prob_leave}%;"></div></div>', unsafe_allow_html=True)
-        
-        # ====================================================================
-        # INPUT SUMMARY (Collapsible Dropdown)
-        # ====================================================================
-        st.markdown("---")
-        _, col_summary, _ = st.columns([2, 3, 2])
-        with col_summary:
-            with st.expander("📋 Click to View Input Summary", expanded=False):
-                summary_df = pd.DataFrame({
-                    'Feature': ['😊 Satisfaction Level', '📊 Last Evaluation', '📅 Years at Company', '📁 Number of Projects', '⏰ Average Monthly Hours'],
-                    'Value': [f"{satisfaction_level:.2f}", f"{last_evaluation:.2f}", f"{time_spend_company} years", f"{number_project} projects", f"{average_monthly_hours} hours"]
-                })
-                st.dataframe(summary_df, use_container_width=True, hide_index=True)
+            # Stay Bar
+            st.write(f"**Likelihood to Stay:** {prob_stay:.1f}%")
+            st.markdown(f"""
+            <div class="custom-progress-bg">
+                <div class="custom-progress-fill" style="width: {prob_stay}%; background-color: #22c55e;"></div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.write("") # Spacer
+
+            # Leave Bar
+            st.write(f"**Likelihood to Leave:** {prob_leave:.1f}%")
+            st.markdown(f"""
+            <div class="custom-progress-bg">
+                <div class="custom-progress-fill" style="width: {prob_leave}%; background-color: #ef4444;"></div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # --- Collapsible Summary ---
+        st.write("")
+        st.write("")
+        with st.expander("📋 View Input Data Summary", expanded=False):
+            summary_df = pd.DataFrame({
+                'Metric': ['Satisfaction', 'Evaluation', 'Projects', 'Monthly Hours', 'Tenure'],
+                'Value': [
+                    f"{st.session_state.satisfaction_level:.2f}",
+                    f"{st.session_state.last_evaluation:.2f}",
+                    str(number_project),
+                    str(average_monthly_hours),
+                    f"{time_spend_company} Years"
+                ]
+            })
+            st.table(summary_df)
 
 if __name__ == "__main__":
     main()
