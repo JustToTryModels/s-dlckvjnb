@@ -151,7 +151,7 @@ The app will open in your default browser at `http://localhost:8501`
 ### Explore the Analysis Notebook
 
 ```bash
-jupyter notebook Notebook/employee_churn.ipynb
+jupyter notebook Notebook/Employee_Churn_Prediction.ipynb
 ```
 
 ---
