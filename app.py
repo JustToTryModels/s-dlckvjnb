@@ -130,7 +130,7 @@ st.markdown("""
             #00f5ff, #ff00ff, #ffff00, #00f5ff, #ff00ff
         );
         background-size: 400% 400%;
-        transform: translateY(-5px) scale(1.02);
+        transform: translateY(-5px) scale(1.03);
         box-shadow: 
             0 10px 30px rgba(0, 245, 255, 0.5),
             0 15px 50px rgba(255, 0, 255, 0.4),
