@@ -438,12 +438,6 @@ def main():
     st.markdown("---")
     st.subheader("📝 Enter Employee Information")
     
-    st.markdown("""
-    <div class="feature-box">
-        <strong>📌 Instructions:</strong> Enter the employee's information below to predict turnover risk.
-    </div>
-    """, unsafe_allow_html=True)
-    
     # Initialize session state for syncing slider and number input
     if 'satisfaction_level' not in st.session_state:
         st.session_state.satisfaction_level = 0.5
