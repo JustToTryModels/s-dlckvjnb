@@ -88,7 +88,7 @@ st.markdown("""
         color: white !important;
         font-size: 1.4rem;
         font-weight: 900 !important;
-        padding: 1.2rem 2.5rem;
+        padding: 0.7rem 1.2rem;
         border-radius: 50px;
         border: none !important;
         outline: none !important;
@@ -581,7 +581,7 @@ def main():
     # ========================================================================
     st.markdown("---")
     
-    col1, col2, col3 = st.columns([1, 2, 1])
+    col1, col2, col3 = st.columns([2, 1, 2])
     with col2:
         predict_button = st.button("🔮 Predict Employee Turnover", use_container_width=True)
     
