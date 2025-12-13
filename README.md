@@ -71,7 +71,7 @@ employee-churn-prediction/
 ├── Data/
 │   └── HR_comma_sep.csv          # Dataset
 ├── Notebook/
-│   └── employee_churn.ipynb      # Jupyter notebook with full analysis
+│   └── employee_churn_prediction.ipynb      # Jupyter notebook with full analysis
 ├── app.py                        # Streamlit web application
 ├── requirements.txt              # Python dependencies
 ├── LICENSE                       # MIT License
