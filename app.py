@@ -28,6 +28,14 @@ st.markdown("""
         margin: 0 auto !important;
     }
     
+    /* Sidebar styling - keep original width */
+    section[data-testid="stSidebar"] {
+        width: 300px !important;
+    }
+    section[data-testid="stSidebar"] > div {
+        width: 300px !important;
+    }
+    
     .main-header {
         font-size: 2.5rem;
         font-weight: bold;
