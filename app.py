@@ -176,6 +176,7 @@ st.markdown("""
     .stButton>button:active div,
     .stButton>button:focus div {
         color: white !important;
+        font-weight: bold !important;
     }
     
     .info-box {
@@ -488,7 +489,7 @@ def main():
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        predict_button = st.button("🔮 Predict Employee Turnover", use_container_width=True)
+        predict_button = st.button("🔮 <b>Predict Employee Turnover</b>", use_container_width=True)
     
     # ========================================================================
     # PREDICTION RESULTS
