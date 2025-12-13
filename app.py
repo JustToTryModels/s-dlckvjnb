@@ -1,6 +1,5 @@
 import streamlit as st
 import joblib
-import json
 import pandas as pd
 import numpy as np
 from huggingface_hub import hf_hub_download
@@ -62,140 +61,89 @@ st.markdown("""
         border: 1px solid #b8daff;
     }
     
-    /* ===== ATTRACTIVE PREDICT BUTTON STYLING - VIBRANT PURPLE TO PINK THEME ===== */
+    /* ============================================================ */
+    /* NEW SHINY BUTTON STYLING (Based on provided snippet)         */
+    /* ============================================================ */
+    
     .stButton>button {
+        /* Base Dimensions & Font */
         width: 100%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #667eea 100%);
-        background-size: 400% 400%;
-        color: white !important;
-        font-size: 1.3rem;
-        font-weight: bold;
-        padding: 1rem 2rem;
-        border-radius: 50px;
-        border: none;
-        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 12px 18px;
+        border-radius: 99px;
+        font-family: Arial, sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+        line-height: 20px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        
+        /* Colors & Background */
+        background-color: #040404;
+        color: #ffffff !important;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        
+        /* Positioning & Effects */
         position: relative;
         overflow: hidden;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4), 0 8px 30px rgba(118, 75, 162, 0.3);
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        animation: gradientFlow 5s ease infinite, pulseGlow 2s ease-in-out infinite;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        cursor: pointer;
+        outline: none;
+        transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        
+        /* Optional: Add the texture image from snippet if desired, 
+           or keep pure CSS for speed/reliability. 
+           Here is a pure CSS dark noise gradient to match the feel: */
+        background-image: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%);
     }
-    
-    /* Flowing gradient animation */
-    @keyframes gradientFlow {
-        0% { background-position: 0% 50%; }
-        25% { background-position: 50% 100%; }
-        50% { background-position: 100% 50%; }
-        75% { background-position: 50% 0%; }
-        100% { background-position: 0% 50%; }
+
+    /* Text color persistence */
+    .stButton>button p {
+        color: #ffffff !important;
     }
-    
-    /* Pulsing glow animation */
-    @keyframes pulseGlow {
-        0% { 
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4), 0 8px 30px rgba(118, 75, 162, 0.3);
-            transform: scale(1);
-        }
-        50% { 
-            box-shadow: 0 6px 25px rgba(240, 147, 251, 0.5), 0 10px 40px rgba(245, 87, 108, 0.4), 0 0 40px rgba(102, 126, 234, 0.3);
-            transform: scale(1.01);
-        }
-        100% { 
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4), 0 8px 30px rgba(118, 75, 162, 0.3);
-            transform: scale(1);
-        }
-    }
-    
-    /* Hover effects */
-    .stButton>button:hover {
-        transform: translateY(-5px) scale(1.03);
-        background: linear-gradient(135deg, #f5576c 0%, #f093fb 25%, #764ba2 50%, #667eea 75%, #f5576c 100%);
-        background-size: 400% 400%;
-        box-shadow: 0 10px 30px rgba(240, 147, 251, 0.5), 0 15px 50px rgba(118, 75, 162, 0.4), 0 0 60px rgba(245, 87, 108, 0.3);
-        color: white !important;
-    }
-    
-    /* Active/Click effect */
-    .stButton>button:active {
-        transform: translateY(2px) scale(0.98);
-        box-shadow: 0 2px 10px rgba(102, 126, 234, 0.5), 0 4px 20px rgba(118, 75, 162, 0.3);
-        color: white !important;
-    }
-    
-    /* Shimmer effect overlay */
+
+    /* The "Shiny" moving highlight effect */
     .stButton>button::before {
-        content: '';
+        content: "";
         position: absolute;
         top: 0;
         left: -100%;
         width: 100%;
         height: 100%;
         background: linear-gradient(
-            90deg,
+            120deg,
             transparent,
             rgba(255, 255, 255, 0.3),
             transparent
         );
-        transition: left 0.7s ease;
+        transition: all 0.6s ease;
+        z-index: 1;
     }
-    
+
+    /* Hover State */
+    .stButton>button:hover {
+        transform: scale(1.02);
+        background-color: #000000;
+        border-color: rgba(255, 255, 255, 0.4);
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+        color: #ffffff !important;
+    }
+
+    /* Trigger shine on hover */
     .stButton>button:hover::before {
         left: 100%;
     }
-    
-    /* Sparkle effect */
-    .stButton>button::after {
-        content: '✨';
-        position: absolute;
-        top: 50%;
-        right: 20px;
-        transform: translateY(-50%);
-        font-size: 1.2rem;
-        opacity: 0;
-        transition: all 0.3s ease;
+
+    /* Active/Click State */
+    .stButton>button:active {
+        transform: scale(0.98);
+        border-color: rgba(255, 255, 255, 0.6);
     }
     
-    .stButton>button:hover::after {
-        opacity: 1;
-        right: 15px;
-    }
-    
-    /* Focus effect */
-    .stButton>button:focus {
-        outline: none;
-        box-shadow: 0 0 0 4px rgba(240, 147, 251, 0.4), 0 6px 25px rgba(102, 126, 234, 0.5), 0 10px 40px rgba(118, 75, 162, 0.4);
-        color: white !important;
-    }
-    
-    /* Smooth hover animation speed up */
-    .stButton>button:hover {
-        animation: gradientFlow 2s ease infinite;
-    }
-    
-    /* Ensure text stays white in ALL states */
-    .stButton>button,
-    .stButton>button:hover,
-    .stButton>button:active,
-    .stButton>button:focus,
-    .stButton>button:visited,
-    .stButton>button span,
-    .stButton>button:hover span,
-    .stButton>button:active span,
-    .stButton>button:focus span,
-    .stButton>button p,
-    .stButton>button:hover p,
-    .stButton>button:active p,
-    .stButton>button:focus p,
-    .stButton>button div,
-    .stButton>button:hover div,
-    .stButton>button:active div,
-    .stButton>button:focus div {
-        color: white !important;
-    }
-    
+    /* ============================================================ */
+
     .info-box {
         background-color: #fff3cd;
         border: 1px solid #ffc107;
