@@ -324,5 +324,5 @@ The organization is facing a dual crisis of **burnout and stagnation**, systemat
 ---
 
 <div align="center">
-  <img src="[https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDd2OWtkZnd4MmNtMGE0dHNqeTh4M3p0Ym5jY3F1bHB0ZzV6aWVzbiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/ZfK4cXKJTTay1Ava29/giphy.gif](https://github.com/JustToTryModels/IMAGES/blob/main/thank-you-33.gif?raw=true)" alt="Thank You" width="400">
+  <img src="https://github.com/JustToTryModels/IMAGES/blob/main/thank-you-33.gif?raw=true" alt="Thank You" width="400">
 </div>
