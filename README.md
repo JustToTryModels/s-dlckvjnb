@@ -346,3 +346,6 @@ The organization is facing a dual crisis of **burnout and stagnation**, systemat
 Made with ❤️ for better HR analytics
 
 </div>
+
+
+[![Open in Kaggle](https://kaggle.com/static/images/open-in-kaggle.svg)](https://www.kaggle.com/datasets/giripujar/hr-analytics)
