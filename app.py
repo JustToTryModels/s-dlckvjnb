@@ -465,4 +465,111 @@ def main():
             help="Average number of hours worked per month"
         )
     
-    # Create input 
+    # Create input dictionary
+    input_data = {
+        'satisfaction_level': satisfaction_level,
+        'time_spend_company': time_spend_company,
+        'average_monthly_hours': average_monthly_hours,
+        'number_project': number_project,
+        'last_evaluation': last_evaluation
+    }
+    
+    # ========================================================================
+    # PREDICTION BUTTON
+    # ========================================================================
+    st.markdown("---")
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        predict_button = st.button("🔮 Predict Employee Turnover", use_container_width=True)
+    
+    # ========================================================================
+    # PREDICTION RESULTS
+    # ========================================================================
+    if predict_button:
+        # Create input DataFrame with correct feature order
+        input_df = pd.DataFrame([input_data])[BEST_FEATURES]
+        
+        # Make prediction
+        prediction = model.predict(input_df)[0]
+        prediction_proba = model.predict_proba(input_df)[0]
+        
+        prob_stay = prediction_proba[0] * 100
+        prob_leave = prediction_proba[1] * 100
+        
+        st.markdown("---")
+        st.subheader("🎯 Prediction Results")
+        
+        # Results in two columns
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if prediction == 0:
+                st.markdown("""
+                <div class="prediction-box stay-prediction">
+                    <h1>✅ STAY</h1>
+                    <p style="font-size: 1.3rem; margin-top: 1rem;">
+                        Employee is likely to <strong>STAY</strong> with the company
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown("""
+                <div class="prediction-box leave-prediction">
+                    <h1>⚠️ LEAVE</h1>
+                    <p style="font-size: 1.3rem; margin-top: 1rem;">
+                        Employee is likely to <strong>LEAVE</strong> the company
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown("### 📊 Prediction Probabilities")
+            
+            # Stay probability with GREEN bar
+            st.write(f"**Probability of Staying:** {prob_stay:.1f}%")
+            st.markdown(f"""
+            <div class="progress-bar-container">
+                <div class="progress-bar-green" style="width: {prob_stay}%;"></div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Leave probability with RED bar
+            st.write(f"**Probability of Leaving:** {prob_leave:.1f}%")
+            st.markdown(f"""
+            <div class="progress-bar-container">
+                <div class="progress-bar-red" style="width: {prob_leave}%;"></div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # ====================================================================
+        # INPUT SUMMARY (Collapsible Dropdown) - Centered like predict button
+        # ====================================================================
+        st.markdown("---")
+        
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            with st.expander("📋 Click to View Input Summary", expanded=False):
+                summary_df = pd.DataFrame({
+                    'Feature': [
+                        '😊 Satisfaction Level',
+                        '📊 Last Evaluation',
+                        '📅 Years at Company',
+                        '📁 Number of Projects',
+                        '⏰ Average Monthly Hours'
+                    ],
+                    'Value': [
+                        f"{satisfaction_level:.2f}",
+                        f"{last_evaluation:.2f}",
+                        f"{time_spend_company} years",
+                        f"{number_project} projects",
+                        f"{average_monthly_hours} hours"
+                    ]
+                })
+                st.dataframe(summary_df, use_container_width=True, hide_index=True)
+
+# ============================================================================
+# RUN APPLICATION
+# ============================================================================
+if __name__ == "__main__":
+    main()
