@@ -1,409 +1,787 @@
 import streamlit as st
 import joblib
 import pandas as pd
-import numpy as np
 from huggingface_hub import hf_hub_download
-import time
 
-# ============================================================================
+# =============================================================================
 # PAGE CONFIGURATION
-# ============================================================================
+# =============================================================================
 st.set_page_config(
     page_title="Employee Turnover Prediction",
     page_icon="👥",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
-# ============================================================================
-# CUSTOM CSS STYLING
-# ============================================================================
-st.markdown("""
-<style>
-    /* GLOBAL STYLES */
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
-    
-    html, body, [class*="css"] {
-        font-family: 'Poppins', sans-serif;
-    }
-
-    /* HEADER STYLES */
-    .main-header {
-        background: linear-gradient(90deg, #1E3A5F 0%, #2E5A8F 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-size: 3rem;
-        font-weight: 700;
-        text-align: center;
-        margin-bottom: 0;
-        animation: fadeInDown 1s ease-out;
-    }
-    
-    .sub-header {
-        font-size: 1.2rem;
-        color: #6c757d;
-        text-align: center;
-        margin-bottom: 2.5rem;
-        animation: fadeIn 1.5s ease-out;
-    }
-
-    /* ANIMATIONS */
-    @keyframes fadeInDown {
-        from { opacity: 0; transform: translateY(-20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-    @keyframes pulse {
-        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
-        70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
-        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
-    }
-
-    /* INPUT CARDS */
-    .feature-card {
-        background-color: #ffffff;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        border-left: 5px solid #1E3A5F;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        margin-bottom: 1rem;
-    }
-    .feature-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-    }
-
-    /* PREDICTION BUTTON STYLE */
-    .stButton>button {
-        width: 100%;
-        background: linear-gradient(45deg, #2E5A8F, #1E3A5F);
-        color: white;
-        font-weight: 600;
-        font-size: 1.2rem;
-        padding: 0.8rem 2rem;
-        border-radius: 50px;
-        border: none;
-        box-shadow: 0 4px 15px rgba(30, 58, 95, 0.3);
-        transition: all 0.3s ease;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-    }
-    .stButton>button:hover {
-        background: linear-gradient(45deg, #1E3A5F, #2E5A8F);
-        box-shadow: 0 6px 20px rgba(30, 58, 95, 0.5);
-        transform: translateY(-2px);
-        color: #ffffff;
-    }
-    .stButton>button:active {
-        transform: translateY(1px);
-    }
-
-    /* RESULT BOXES */
-    .result-box {
-        padding: 2rem;
-        border-radius: 15px;
-        text-align: center;
-        animation: fadeIn 0.5s ease-in;
-        color: #1a1a1a;
-        margin-top: 1rem;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    }
-    .stay-box {
-        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-        border: 2px solid #28a745;
-    }
-    .leave-box {
-        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-        border: 2px solid #dc3545;
-    }
-    
-    /* PROGRESS BARS */
-    .progress-wrapper {
-        background-color: #e9ecef;
-        border-radius: 10px;
-        margin: 10px 0;
-        height: 20px;
-        overflow: hidden;
-        box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-    }
-    .progress-fill-green {
-        height: 100%;
-        background: linear-gradient(90deg, #28a745, #34ce57);
-        transition: width 1s ease-in-out;
-    }
-    .progress-fill-red {
-        height: 100%;
-        background: linear-gradient(90deg, #dc3545, #e4606d);
-        transition: width 1s ease-in-out;
-    }
-
-    /* SIDEBAR STYLING */
-    [data-testid="stSidebar"] {
-        background-color: #f8f9fa;
-        border-right: 1px solid #dee2e6;
-    }
-    .sidebar-card {
-        background-color: white;
-        padding: 1rem;
-        border-radius: 8px;
-        border: 1px solid #e9ecef;
-        margin-bottom: 1rem;
-    }
-
-    /* CUSTOM TOOLTIP ICON */
-    .tooltip-icon {
-        color: #1E3A5F;
-        font-size: 0.9rem;
-        margin-left: 5px;
-        cursor: help;
-    }
-
-    /* EXPANDER STYLING */
-    div[data-testid="stExpander"] details summary {
-        background-color: #f8f9fa;
-        border-radius: 8px;
-        border: 1px solid #dee2e6;
-        font-weight: 600;
-        color: #1E3A5F;
-    }
-    div[data-testid="stExpander"] details[open] summary {
-        border-bottom-left-radius: 0;
-        border-bottom-right-radius: 0;
-    }
-    div[data-testid="stExpander"] div[role="button"]:hover {
-        color: #2E5A8F;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-# ============================================================================
-# CONFIG & CONSTANTS
-# ============================================================================
+# =============================================================================
+# CONFIGURATION
+# =============================================================================
 HF_REPO_ID = "Zlib2/RFC"
 MODEL_FILENAME = "final_random_forest_model.joblib"
 
 BEST_FEATURES = [
     "satisfaction_level",
-    "time_spend_company", 
+    "time_spend_company",
     "average_monthly_hours",
     "number_project",
-    "last_evaluation"
+    "last_evaluation",
 ]
 
-# ============================================================================
-# LOAD MODEL
-# ============================================================================
+# =============================================================================
+# STYLES
+# =============================================================================
+def inject_global_css() -> None:
+    st.markdown(
+        """
+<style>
+/* =========================
+   Fonts + Theme Variables
+   ========================= */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root{
+  --bg: #0B1220;           /* deep navy */
+  --bg2: #0E1A2F;
+  --surface: rgba(255,255,255,0.06);
+  --surface2: rgba(255,255,255,0.09);
+  --card: rgba(255,255,255,0.08);
+  --stroke: rgba(255,255,255,0.12);
+  --text: rgba(255,255,255,0.92);
+  --muted: rgba(255,255,255,0.70);
+
+  --accent: #21C7A8;       /* teal */
+  --accent2: #2F80ED;      /* blue */
+  --good: #2ECC71;
+  --bad: #FF5A6E;
+  --warn: #FFC857;
+
+  --shadow: 0 16px 40px rgba(0,0,0,0.35);
+  --shadow2: 0 12px 26px rgba(0,0,0,0.28);
+  --radius-xl: 22px;
+  --radius-lg: 16px;
+  --radius-md: 12px;
+}
+
+html, body, [class*="css"]  {
+  font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
+}
+
+/* =========================
+   App Background + Layout
+   ========================= */
+.stApp {
+  background:
+    radial-gradient(1200px 800px at 15% 10%, rgba(47,128,237,0.25), transparent 60%),
+    radial-gradient(1000px 700px at 85% 20%, rgba(33,199,168,0.18), transparent 65%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
+  color: var(--text);
+}
+
+section.main > div { padding-top: 1.2rem; }
+
+/* Hide Streamlit default footer/menu for a more product-like look */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+
+/* =========================
+   Sidebar Styling
+   ========================= */
+[data-testid="stSidebar"] > div:first-child {
+  background:
+    radial-gradient(700px 400px at 20% 10%, rgba(33,199,168,0.10), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.03) 100%);
+  border-right: 1px solid var(--stroke);
+}
+
+[data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3,
+[data-testid="stSidebar"] p,  [data-testid="stSidebar"] li, [data-testid="stSidebar"] span {
+  color: var(--text) !important;
+}
+
+.sidebar-card {
+  background: rgba(0,0,0,0.18);
+  border: 1px solid var(--stroke);
+  border-radius: var(--radius-lg);
+  padding: 14px 14px;
+  box-shadow: var(--shadow2);
+}
+
+/* =========================
+   Hero Header
+   ========================= */
+.hero {
+  position: relative;
+  padding: 22px 22px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--stroke);
+  background:
+    linear-gradient(135deg, rgba(47,128,237,0.20), rgba(33,199,168,0.12)),
+    rgba(255,255,255,0.05);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  animation: fadeUp 520ms ease-out both;
+}
+
+.hero::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  background:
+    radial-gradient(600px 220px at 10% 0%, rgba(33,199,168,0.22), transparent 65%),
+    radial-gradient(520px 240px at 90% 10%, rgba(47,128,237,0.22), transparent 60%);
+  filter: blur(18px);
+  opacity: 0.75;
+  pointer-events:none;
+}
+
+.hero-grid {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-title {
+  font-size: 2.0rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--text);
+}
+
+.hero-subtitle {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 1.02rem;
+  line-height: 1.5;
+}
+
+.badge-row { display:flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.badge {
+  display:inline-flex;
+  align-items:center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: rgba(0,0,0,0.18);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.hero-icon {
+  width: 56px; height: 56px;
+  border-radius: 16px;
+  display:flex; align-items:center; justify-content:center;
+  background: linear-gradient(135deg, rgba(33,199,168,0.35), rgba(47,128,237,0.25));
+  border: 1px solid rgba(255,255,255,0.16);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.22);
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0px); }
+}
+
+/* =========================
+   Cards + Section Titles
+   ========================= */
+.section-title {
+  margin: 18px 0 10px 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.card {
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--stroke);
+  background: rgba(255,255,255,0.06);
+  box-shadow: var(--shadow2);
+  padding: 18px 18px;
+}
+
+.card-soft {
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--stroke);
+  background: rgba(0,0,0,0.18);
+  box-shadow: var(--shadow2);
+  padding: 18px 18px;
+}
+
+/* =========================
+   Inputs polish (BaseWeb)
+   ========================= */
+div[data-testid="stNumberInput"] input,
+div[data-testid="stTextInput"] input {
+  background: rgba(0,0,0,0.25) !important;
+  color: var(--text) !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+  border-radius: 12px !important;
+}
+
+div[data-testid="stNumberInput"] input:focus,
+div[data-testid="stTextInput"] input:focus {
+  border-color: rgba(33,199,168,0.55) !important;
+  box-shadow: 0 0 0 4px rgba(33,199,168,0.18) !important;
+}
+
+/* Slider track + thumb */
+div[data-testid="stSlider"] > div {
+  padding: 6px 8px 0px 8px;
+  border-radius: 14px;
+  background: rgba(0,0,0,0.16);
+  border: 1px solid rgba(255,255,255,0.10);
+}
+div[data-baseweb="slider"] div[role="slider"] {
+  box-shadow: 0 0 0 4px rgba(47,128,237,0.15);
+}
+div[data-baseweb="slider"] div[role="slider"]:hover {
+  transform: scale(1.02);
+  transition: transform 120ms ease;
+}
+
+/* =========================
+   CTA Button (Professional)
+   ========================= */
+.stButton > button {
+  width: 100%;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  border-radius: 999px !important;
+  padding: 0.95rem 1.2rem !important;
+
+  color: white !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.02em !important;
+  font-size: 1.05rem !important;
+
+  background: linear-gradient(135deg, rgba(47,128,237,0.95), rgba(33,199,168,0.95)) !important;
+  box-shadow: 0 14px 36px rgba(0,0,0,0.35);
+  position: relative;
+  overflow: hidden;
+  transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+}
+
+.stButton > button::before{
+  content:"";
+  position:absolute;
+  top:0; left:-120%;
+  width: 120%;
+  height: 100%;
+  background: linear-gradient(110deg, transparent, rgba(255,255,255,0.22), transparent);
+  transform: skewX(-18deg);
+}
+
+.stButton > button:hover {
+  transform: translateY(-2px);
+  filter: saturate(1.05);
+  box-shadow: 0 18px 44px rgba(0,0,0,0.42);
+}
+
+.stButton > button:hover::before{
+  left: 120%;
+  transition: left 620ms ease;
+}
+
+.stButton > button:active{
+  transform: translateY(0px) scale(0.99);
+}
+
+/* =========================
+   Result Cards
+   ========================= */
+.result-wrap { animation: fadeUp 420ms ease-out both; }
+
+.result-card {
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--stroke);
+  background: rgba(255,255,255,0.06);
+  box-shadow: var(--shadow2);
+  padding: 18px 18px;
+}
+
+.result-title {
+  font-size: 1.2rem;
+  font-weight: 900;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.result-pill {
+  display:inline-flex;
+  align-items:center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: rgba(0,0,0,0.18);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.result-stay { border-color: rgba(46,204,113,0.35); }
+.result-leave{ border-color: rgba(255,90,110,0.35); }
+
+.kpi {
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  gap: 10px;
+  margin: 10px 0 6px 0;
+  color: var(--muted);
+}
+
+.progress-shell {
+  width: 100%;
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  overflow:hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  width: var(--w);
+  border-radius: 999px;
+  transition: width 650ms cubic-bezier(.2,.9,.2,1);
+}
+
+.progress-green { background: linear-gradient(90deg, rgba(46,204,113,0.85), rgba(33,199,168,0.85)); }
+.progress-red   { background: linear-gradient(90deg, rgba(255,90,110,0.92), rgba(255,200,87,0.70)); }
+
+/* =========================
+   Expander styling
+   ========================= */
+div[data-testid="stExpander"] details summary {
+  background: rgba(255,255,255,0.06) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--stroke) !important;
+  border-radius: 14px !important;
+  padding: 0.85rem 1rem !important;
+  font-weight: 800 !important;
+}
+
+div[data-testid="stExpander"] details > div {
+  border: 1px solid var(--stroke) !important;
+  border-top: none !important;
+  border-radius: 0 0 14px 14px !important;
+  background: rgba(0,0,0,0.18) !important;
+}
+
+/* =========================
+   Responsive tweaks
+   ========================= */
+@media (max-width: 900px){
+  .hero-title { font-size: 1.55rem; }
+  .hero-grid { flex-direction: column; align-items:flex-start; }
+}
+</style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+# =============================================================================
+# MODEL LOADING
+# =============================================================================
 @st.cache_resource
-def load_model():
-    """Load the trained model from Hugging Face Hub with caching."""
+def load_model_from_huggingface():
     try:
         model_path = hf_hub_download(
             repo_id=HF_REPO_ID,
             filename=MODEL_FILENAME,
-            repo_type="model"
+            repo_type="model",
         )
         return joblib.load(model_path)
     except Exception as e:
+        st.error(f"Error loading model: {e}")
         return None
 
-# ============================================================================
-# CALLBACKS FOR SYNCED INPUTS
-# ============================================================================
-def update_sat_slider():
-    st.session_state.sat_slider = st.session_state.sat_input
 
-def update_sat_input():
-    st.session_state.sat_input = st.session_state.sat_slider
+# =============================================================================
+# Slider/Input Sync
+# =============================================================================
+def sync_satisfaction_slider():
+    st.session_state.satisfaction_level = st.session_state.sat_slider
 
-def update_eval_slider():
-    st.session_state.eval_slider = st.session_state.eval_input
 
-def update_eval_input():
-    st.session_state.eval_input = st.session_state.eval_slider
+def sync_satisfaction_input():
+    st.session_state.satisfaction_level = st.session_state.sat_input
 
-# ============================================================================
-# MAIN APPLICATION LAYOUT
-# ============================================================================
-def main():
-    # 1. SIDEBAR
-    with st.sidebar:
-        st.markdown('<div style="text-align: center; margin-bottom: 20px;"><h2>⚙️ Model Config</h2></div>', unsafe_allow_html=True)
-        
-        st.markdown("""
-        <div class="sidebar-card">
-            <strong>🤖 Algorithm:</strong> Random Forest<br>
-            <strong>🎯 Accuracy:</strong> ~99%<br>
-            <strong>📉 Loss Function:</strong> Gini Impurity
+
+def sync_evaluation_slider():
+    st.session_state.last_evaluation = st.session_state.eval_slider
+
+
+def sync_evaluation_input():
+    st.session_state.last_evaluation = st.session_state.eval_input
+
+
+# =============================================================================
+# UI RENDERING
+# =============================================================================
+def render_hero():
+    st.markdown(
+        f"""
+<div class="hero">
+  <div class="hero-grid">
+    <div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="hero-icon" aria-hidden="true">
+          <span style="font-size:28px;">👥</span>
         </div>
-        """, unsafe_allow_html=True)
-        
-        st.subheader("📊 Feature Importance")
-        st.caption("Top 5 features used for prediction:")
-        
-        features_df = pd.DataFrame({
-            'Feature': ['Satisfaction', 'Yrs at Company', 'Avg Monthly Hrs', 'Projects', 'Last Eval'],
-            'Importance': [0.35, 0.25, 0.18, 0.15, 0.07] # Approximate visual weights
-        })
-        st.bar_chart(features_df.set_index('Feature'), color="#1E3A5F", height=150)
-        
-        st.markdown("---")
-        st.info("ℹ️ **Privacy Note:** Data entered here is processed in real-time and not stored.")
-        st.markdown(f"[🔗 View Model Repo](https://huggingface.co/{HF_REPO_ID})")
+        <div>
+          <h1 class="hero-title">Employee Turnover Prediction</h1>
+          <div class="hero-subtitle">Enter a few key signals and get a clear, probability-based turnover risk estimate.</div>
+        </div>
+      </div>
 
-    # 2. MAIN HEADER
-    st.markdown('<h1 class="main-header">👥 Employee Turnover AI</h1>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Advanced analytics to predict employee retention risk</p>', unsafe_allow_html=True)
+      <div class="badge-row">
+        <span class="badge">🤖 Random Forest</span>
+        <span class="badge">⚖️ Balanced Classes</span>
+        <span class="badge">🧩 {len(BEST_FEATURES)} Features</span>
+      </div>
+    </div>
 
-    # Load Model
-    model = load_model()
-    if model is None:
-        st.error(f"❌ Could not load model from Hugging Face ({HF_REPO_ID}). Please check connection.")
+    <div class="badge" style="background: rgba(0,0,0,0.22);">
+      <span style="opacity:0.85;">Repo</span>
+      <span style="font-weight:800;">{HF_REPO_ID}</span>
+    </div>
+  </div>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_sidebar():
+    with st.sidebar:
+        st.markdown(
+            f"""
+<div class="sidebar-card">
+  <div style="font-weight:900; font-size:1.05rem; margin-bottom:10px;">Model Overview</div>
+  <div style="color:rgba(255,255,255,0.80); line-height:1.55;">
+    <div><span style="opacity:0.75;">Repository:</span><br><b>{HF_REPO_ID}</b></div>
+    <div style="margin-top:10px;"><span style="opacity:0.75;">Algorithm:</span><br><b>Random Forest Classifier</b></div>
+    <div style="margin-top:10px;"><span style="opacity:0.75;">Features:</span><br><b>{len(BEST_FEATURES)} selected signals</b></div>
+    <div style="margin-top:10px;"><span style="opacity:0.75;">Class Weight:</span><br><b>Balanced</b></div>
+  </div>
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        st.markdown("")
+
+        st.markdown(
+            """
+<div class="sidebar-card">
+  <div style="font-weight:900; font-size:1.05rem; margin-bottom:10px;">Selected Features</div>
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
+        for i, feat in enumerate(BEST_FEATURES, 1):
+            st.write(f"{i}. {feat.replace('_', ' ').title()}")
+
+        st.markdown("")
+        st.markdown(
+            """
+<div class="sidebar-card">
+  <div style="font-weight:900; font-size:1.05rem; margin-bottom:10px;">Target Variable</div>
+  <div style="color:rgba(255,255,255,0.78); line-height:1.55;">
+    <b>0 → Stay</b>: likely to remain<br/>
+    <b>1 → Leave</b>: likely to exit
+  </div>
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        st.markdown("")
+        st.markdown(f"[View on Hugging Face ↗](https://huggingface.co/{HF_REPO_ID})")
+
+
+def render_inputs() -> dict:
+    st.markdown('<div class="section-title">Employee Signals</div>', unsafe_allow_html=True)
+    st.markdown(
+        """
+<div class="card-soft">
+  <div style="font-weight:800; margin-bottom:6px;">How to use</div>
+  <div style="color:rgba(255,255,255,0.78); line-height:1.55;">
+    Adjust sliders or type values. Then click <b>Predict</b> to see a probability split for staying vs leaving.
+  </div>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Defaults for sync values
+    if "satisfaction_level" not in st.session_state:
+        st.session_state.satisfaction_level = 0.50
+    if "last_evaluation" not in st.session_state:
+        st.session_state.last_evaluation = 0.70
+
+    # Row 1
+    c1, c2 = st.columns(2, gap="large")
+
+    with c1:
+        st.markdown("**Satisfaction Level**")
+        sc1, sc2 = st.columns([3, 1], gap="small")
+        with sc1:
+            st.slider(
+                "Satisfaction Slider",
+                min_value=0.0,
+                max_value=1.0,
+                value=float(st.session_state.satisfaction_level),
+                step=0.01,
+                help="Overall satisfaction (0 = very dissatisfied, 1 = very satisfied).",
+                label_visibility="collapsed",
+                key="sat_slider",
+                on_change=sync_satisfaction_slider,
+            )
+        with sc2:
+            st.number_input(
+                "Satisfaction Input",
+                min_value=0.0,
+                max_value=1.0,
+                value=float(st.session_state.satisfaction_level),
+                step=0.01,
+                format="%.2f",
+                help="You can type a precise value here.",
+                label_visibility="collapsed",
+                key="sat_input",
+                on_change=sync_satisfaction_input,
+            )
+        satisfaction_level = float(st.session_state.satisfaction_level)
+
+    with c2:
+        st.markdown("**Last Evaluation Score**")
+        ec1, ec2 = st.columns([3, 1], gap="small")
+        with ec1:
+            st.slider(
+                "Evaluation Slider",
+                min_value=0.0,
+                max_value=1.0,
+                value=float(st.session_state.last_evaluation),
+                step=0.01,
+                help="Most recent performance evaluation score (0 = poor, 1 = excellent).",
+                label_visibility="collapsed",
+                key="eval_slider",
+                on_change=sync_evaluation_slider,
+            )
+        with ec2:
+            st.number_input(
+                "Evaluation Input",
+                min_value=0.0,
+                max_value=1.0,
+                value=float(st.session_state.last_evaluation),
+                step=0.01,
+                format="%.2f",
+                help="You can type a precise value here.",
+                label_visibility="collapsed",
+                key="eval_input",
+                on_change=sync_evaluation_input,
+            )
+        last_evaluation = float(st.session_state.last_evaluation)
+
+    # Row 2
+    c3, c4 = st.columns(2, gap="large")
+    with c3:
+        time_spend_company = st.number_input(
+            "Years at Company",
+            min_value=1,
+            max_value=40,
+            value=3,
+            step=1,
+            help="Number of years the employee has worked at the company.",
+        )
+    with c4:
+        number_project = st.number_input(
+            "Number of Projects",
+            min_value=1,
+            max_value=10,
+            value=4,
+            step=1,
+            help="How many projects the employee is currently assigned to.",
+        )
+
+    # Row 3
+    c5, _ = st.columns(2, gap="large")
+    with c5:
+        average_monthly_hours = st.number_input(
+            "Average Monthly Hours",
+            min_value=80,
+            max_value=350,
+            value=200,
+            step=5,
+            help="Average number of hours worked per month.",
+        )
+
+    # If user changes inputs, clear previous result (keeps UX clean)
+    current_signature = (
+        satisfaction_level,
+        last_evaluation,
+        int(time_spend_company),
+        int(number_project),
+        int(average_monthly_hours),
+    )
+    if st.session_state.get("last_signature") != current_signature:
+        st.session_state.last_signature = current_signature
+        st.session_state.last_result = None
+
+    return {
+        "satisfaction_level": satisfaction_level,
+        "time_spend_company": int(time_spend_company),
+        "average_monthly_hours": int(average_monthly_hours),
+        "number_project": int(number_project),
+        "last_evaluation": last_evaluation,
+    }
+
+
+def render_results(input_data: dict):
+    result = st.session_state.get("last_result")
+    if not result:
         return
 
-    # 3. INPUT FORM
-    
-    # Initialize session state for synced inputs if not exists
-    if 'sat_input' not in st.session_state: st.session_state.sat_input = 0.50
-    if 'sat_slider' not in st.session_state: st.session_state.sat_slider = 0.50
-    if 'eval_input' not in st.session_state: st.session_state.eval_input = 0.70
-    if 'eval_slider' not in st.session_state: st.session_state.eval_slider = 0.70
+    prediction = result["prediction"]
+    prob_stay = result["prob_stay"]
+    prob_leave = result["prob_leave"]
 
-    st.markdown("### 📝 Employee Metrics")
-    
-    with st.container():
-        # --- ROW 1: Satisfaction & Evaluation ---
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("""
-            <div class="feature-card">
-                <span style="font-size: 1.2rem;">😊 <strong>Satisfaction Level</strong></span>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            c1_a, c1_b = st.columns([3, 1])
-            with c1_a:
-                st.slider("", 0.0, 1.0, key="sat_slider", on_change=update_sat_input, label_visibility="collapsed", help="Employee's self-reported satisfaction.")
-            with c1_b:
-                st.number_input("", 0.0, 1.0, step=0.01, key="sat_input", on_change=update_sat_slider, label_visibility="collapsed")
+    st.markdown('<div class="section-title">Prediction</div>', unsafe_allow_html=True)
 
-        with col2:
-            st.markdown("""
-            <div class="feature-card">
-                <span style="font-size: 1.2rem;">📊 <strong>Last Evaluation</strong></span>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            c2_a, c2_b = st.columns([3, 1])
-            with c2_a:
-                st.slider("", 0.0, 1.0, key="eval_slider", on_change=update_eval_input, label_visibility="collapsed", help="Score from the last performance review.")
-            with c2_b:
-                st.number_input("", 0.0, 1.0, step=0.01, key="eval_input", on_change=update_eval_slider, label_visibility="collapsed")
+    left, right = st.columns([1.1, 1.2], gap="large")
+    with left:
+        if prediction == 0:
+            st.markdown(
+                f"""
+<div class="result-wrap">
+  <div class="result-card result-stay">
+    <div class="result-pill">✅ Outcome</div>
+    <div style="margin-top:10px;">
+      <p class="result-title">Likely to Stay</p>
+      <div style="color: rgba(255,255,255,0.78); line-height:1.55; margin-top:8px;">
+        Based on the provided signals, the model leans toward <b>retention</b>.
+      </div>
+    </div>
+  </div>
+</div>
+                """,
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                f"""
+<div class="result-wrap">
+  <div class="result-card result-leave">
+    <div class="result-pill">⚠️ Outcome</div>
+    <div style="margin-top:10px;">
+      <p class="result-title">Likely to Leave</p>
+      <div style="color: rgba(255,255,255,0.78); line-height:1.55; margin-top:8px;">
+        Based on the provided signals, the model leans toward <b>turnover risk</b>.
+      </div>
+    </div>
+  </div>
+</div>
+                """,
+                unsafe_allow_html=True,
+            )
 
-        # --- ROW 2: Years, Projects, Hours ---
-        col3, col4, col5 = st.columns(3)
-        
-        with col3:
-            st.markdown('<div style="margin-top: 10px;"><strong>📅 Years at Company</strong></div>', unsafe_allow_html=True)
-            time_spend = st.number_input("Years", min_value=1, max_value=20, value=3, step=1, label_visibility="collapsed", help="Total duration of employment.")
-            
-        with col4:
-            st.markdown('<div style="margin-top: 10px;"><strong>📁 Number of Projects</strong></div>', unsafe_allow_html=True)
-            num_projects = st.number_input("Projects", min_value=1, max_value=10, value=4, step=1, label_visibility="collapsed", help="Current active project count.")
+    with right:
+        st.markdown(
+            """
+<div class="result-wrap">
+  <div class="result-card">
+    <div class="result-pill">📊 Probabilities</div>
+    <div style="margin-top:12px;">
+      <div class="kpi"><span><b>Stay</b></span><span style="color:rgba(255,255,255,0.90); font-weight:900;">{stay:.1f}%</span></div>
+      <div class="progress-shell"><div class="progress-bar progress-green" style="--w: {stay:.2f}%;"></div></div>
 
-        with col5:
-            st.markdown('<div style="margin-top: 10px;"><strong>⏰ Avg. Monthly Hours</strong></div>', unsafe_allow_html=True)
-            avg_hours = st.number_input("Hours", min_value=50, max_value=350, value=200, step=5, label_visibility="collapsed", help="Average working hours per month.")
+      <div style="height:12px;"></div>
 
-    # 4. PREDICTION SECTION
-    st.markdown("---")
-    
-    # Centered Predict Button
-    b_col1, b_col2, b_col3 = st.columns([1, 2, 1])
-    with b_col2:
-        predict_btn = st.button("🔮 Predict Turnover Risk", use_container_width=True)
+      <div class="kpi"><span><b>Leave</b></span><span style="color:rgba(255,255,255,0.90); font-weight:900;">{leave:.1f}%</span></div>
+      <div class="progress-shell"><div class="progress-bar progress-red" style="--w: {leave:.2f}%;"></div></div>
 
-    # 5. RESULTS DISPLAY
-    if predict_btn:
-        # Create Dataframe
-        input_data = pd.DataFrame([{
-            'satisfaction_level': st.session_state.sat_input,
-            'time_spend_company': time_spend,
-            'average_monthly_hours': avg_hours,
-            'number_project': num_projects,
-            'last_evaluation': st.session_state.eval_input
-        }])
-        
-        # Ensure column order matches model training
-        input_data = input_data[BEST_FEATURES]
+      <div style="margin-top:14px; color:rgba(255,255,255,0.70); line-height:1.55;">
+        Tip: treat this as a decision support signal. Consider recent role changes, manager context, and HR policy before acting.
+      </div>
+    </div>
+  </div>
+</div>
+            """.format(
+                stay=prob_stay, leave=prob_leave
+            ),
+            unsafe_allow_html=True,
+        )
 
-        # Simulate Loading
-        with st.spinner("Analyzing employee patterns..."):
-            time.sleep(0.8) # Small UI delay for effect
-            prediction = model.predict(input_data)[0]
-            probabilities = model.predict_proba(input_data)[0]
-            prob_stay = probabilities[0] * 100
-            prob_leave = probabilities[1] * 100
+    # Input Summary
+    st.markdown("")
+    with st.expander("Input Summary", expanded=False):
+        # Clean HTML table (more “website-like” than default dataframe)
+        rows = [
+            ("😊 Satisfaction Level", f"{input_data['satisfaction_level']:.2f}"),
+            ("📊 Last Evaluation", f"{input_data['last_evaluation']:.2f}"),
+            ("📅 Years at Company", f"{input_data['time_spend_company']}"),
+            ("📁 Number of Projects", f"{input_data['number_project']}"),
+            ("⏰ Average Monthly Hours", f"{input_data['average_monthly_hours']}"),
+        ]
+        table_rows = "\n".join(
+            [f"<tr><td style='padding:10px 8px; opacity:0.9;'><b>{k}</b></td><td style='padding:10px 8px; text-align:right; font-weight:800;'>{v}</td></tr>" for k, v in rows]
+        )
+        st.markdown(
+            f"""
+<div style="border:1px solid rgba(255,255,255,0.12); border-radius:14px; overflow:hidden;">
+  <table style="width:100%; border-collapse:collapse; background: rgba(255,255,255,0.04);">
+    <tbody>
+      {table_rows}
+    </tbody>
+  </table>
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-        # Display Logic
-        st.markdown("<br>", unsafe_allow_html=True)
-        r_col1, r_col2 = st.columns([1, 1])
 
-        with r_col1:
-            if prediction == 0:
-                st.markdown(f"""
-                <div class="result-box stay-box">
-                    <h1 style="margin:0; color: #155724;">✅ STAY</h1>
-                    <h4 style="margin-top:10px;">Low Turnover Risk</h4>
-                    <p>This employee is likely to remain with the company.</p>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.markdown(f"""
-                <div class="result-box leave-box">
-                    <h1 style="margin:0; color: #721c24;">⚠️ LEAVE</h1>
-                    <h4 style="margin-top:10px;">High Turnover Risk</h4>
-                    <p>This employee shows strong indicators of leaving.</p>
-                </div>
-                """, unsafe_allow_html=True)
+# =============================================================================
+# MAIN
+# =============================================================================
+def main():
+    inject_global_css()
+    render_sidebar()
+    render_hero()
 
-        with r_col2:
-            st.markdown("### 📊 Probability Analysis")
-            
-            # Stay Bar
-            st.markdown(f"**Stay Probability:** {prob_stay:.1f}%")
-            st.markdown(f"""
-            <div class="progress-wrapper">
-                <div class="progress-fill-green" style="width: {prob_stay}%;"></div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Leave Bar
-            st.markdown(f"**Leave Probability:** {prob_leave:.1f}%")
-            st.markdown(f"""
-            <div class="progress-wrapper">
-                <div class="progress-fill-red" style="width: {prob_leave}%;"></div>
-            </div>
-            """, unsafe_allow_html=True)
+    model = load_model_from_huggingface()
+    if model is None:
+        st.error("Failed to load the model from Hugging Face.")
+        st.info(f"Repository: https://huggingface.co/{HF_REPO_ID}")
+        return
 
-        # 6. INPUT SUMMARY (Collapsible)
-        st.markdown("<br>", unsafe_allow_html=True)
-        with st.expander("📋 View Input Summary"):
-            summary_df = pd.DataFrame({
-                'Metric': ['Satisfaction', 'Evaluation', 'Years', 'Projects', 'Hours'],
-                'Value': [
-                    f"{st.session_state.sat_input:.2f}",
-                    f"{st.session_state.eval_input:.2f}",
-                    time_spend,
-                    num_projects,
-                    avg_hours
-                ]
-            })
-            st.table(summary_df)
+    input_data = render_inputs()
+
+    st.markdown("")
+    c1, c2, c3 = st.columns([1, 1.4, 1])
+    with c2:
+        predict_button = st.button("Predict Turnover Risk", use_container_width=True)
+
+    if predict_button:
+        # Visually polished loading flow
+        with st.spinner("Running model inference..."):
+            input_df = pd.DataFrame([input_data])[BEST_FEATURES]
+            pred = int(model.predict(input_df)[0])
+            proba = model.predict_proba(input_df)[0]
+
+        st.session_state.last_result = {
+            "prediction": pred,
+            "prob_stay": float(proba[0] * 100.0),
+            "prob_leave": float(proba[1] * 100.0),
+        }
+
+    render_results(input_data)
+
 
 if __name__ == "__main__":
     main()
