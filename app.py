@@ -75,7 +75,8 @@ st.markdown("""
         font-weight: bold;
         padding: 1.2rem 2.5rem;
         border-radius: 50px;
-        border: none;
+        border: none !important;
+        outline: none !important;
         cursor: pointer;
         position: relative;
         overflow: hidden;
@@ -138,6 +139,8 @@ st.markdown("""
             inset 0 0 20px rgba(255, 255, 255, 0.1);
         animation: gradientShift 1.5s ease infinite;
         color: white !important;
+        border: none !important;
+        outline: none !important;
     }
     
     /* Active/Click - Neon burst effect */
@@ -153,6 +156,8 @@ st.markdown("""
             0 4px 20px rgba(255, 107, 53, 0.4),
             inset 0 0 30px rgba(255, 255, 255, 0.2);
         color: white !important;
+        border: none !important;
+        outline: none !important;
     }
     
     /* Shimmer/shine effect overlay */
@@ -190,15 +195,31 @@ st.markdown("""
         50% { opacity: 0.5; transform: scale(1.3) rotate(180deg); }
     }
     
-    /* Focus effect - Cyan glow ring */
+    /* Focus effect - Remove blue border completely */
     .stButton>button:focus {
-        outline: none;
+        outline: none !important;
+        border: none !important;
         box-shadow: 
-            0 0 0 4px rgba(0, 245, 255, 0.5),
-            0 6px 25px rgba(255, 0, 128, 0.5),
-            0 12px 40px rgba(255, 140, 0, 0.4),
-            0 0 60px rgba(64, 224, 208, 0.3);
+            0 4px 15px rgba(255, 0, 128, 0.4),
+            0 8px 30px rgba(255, 140, 0, 0.3),
+            0 0 40px rgba(64, 224, 208, 0.2);
         color: white !important;
+    }
+    
+    /* Focus-visible - Remove blue border completely */
+    .stButton>button:focus-visible {
+        outline: none !important;
+        border: none !important;
+        box-shadow: 
+            0 4px 15px rgba(255, 0, 128, 0.4),
+            0 8px 30px rgba(255, 140, 0, 0.3),
+            0 0 40px rgba(64, 224, 208, 0.2);
+    }
+    
+    /* Remove focus ring from button container as well */
+    .stButton>button:focus:not(:focus-visible) {
+        outline: none !important;
+        border: none !important;
     }
     
     /* Ensure text stays white in ALL states */
@@ -206,6 +227,7 @@ st.markdown("""
     .stButton>button:hover,
     .stButton>button:active,
     .stButton>button:focus,
+    .stButton>button:focus-visible,
     .stButton>button:visited,
     .stButton>button span,
     .stButton>button:hover span,
@@ -220,6 +242,8 @@ st.markdown("""
     .stButton>button:active div,
     .stButton>button:focus div {
         color: white !important;
+        outline: none !important;
+        border: none !important;
     }
     
     .info-box {
