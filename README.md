@@ -321,6 +321,9 @@ The organization is facing a dual crisis of **burnout and stagnation**, systemat
 | **The Focus** | HR, Accounting, and Sales (highest churn) |
 | **The Fix** | Conduct "Stay Interviews" in these specific departments to identify local stressors immediately |
 
+## 🙏 Thank You
+
+Thanks for visiting this project! If you found it helpful, please consider giving it a ⭐
 
 <div align="center">
   <img src="https://github.com/JustToTryModels/IMAGES/blob/main/thank-you-33.gif?raw=true" alt="Thank You" width="400">
