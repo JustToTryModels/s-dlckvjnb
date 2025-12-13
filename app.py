@@ -110,24 +110,51 @@ st.markdown("""
         border-radius: 10px;
         transition: width 0.5s ease-in-out;
     }
-    /* Blue expander styling */
+    
+    /* Blue styled expander */
+    .blue-expander .streamlit-expanderHeader {
+        background-color: #1E3A5F !important;
+        color: white !important;
+        border-radius: 8px !important;
+        font-size: 1.2rem !important;
+        padding: 0.75rem !important;
+    }
+    .blue-expander .streamlit-expanderHeader:hover {
+        background-color: #2E5A8F !important;
+        color: white !important;
+    }
+    
+    /* Style all expanders to be blue */
     div[data-testid="stExpander"] {
         border: none !important;
-    }
-    div[data-testid="stExpander"] > div:first-child {
-        background-color: #007bff !important;
         border-radius: 8px !important;
     }
-    div[data-testid="stExpander"] > div:first-child > div > div > p {
+    div[data-testid="stExpander"] details {
+        border: none !important;
+    }
+    div[data-testid="stExpander"] details summary {
+        background-color: #1E3A5F !important;
         color: white !important;
+        border-radius: 8px !important;
+        padding: 0.75rem 1rem !important;
         font-size: 1.2rem !important;
         font-weight: 500 !important;
     }
-    div[data-testid="stExpander"] > div:first-child:hover {
-        background-color: #0056b3 !important;
+    div[data-testid="stExpander"] details summary:hover {
+        background-color: #2E5A8F !important;
+        color: white !important;
     }
-    div[data-testid="stExpander"] svg {
+    div[data-testid="stExpander"] details summary svg {
+        color: white !important;
         fill: white !important;
+    }
+    div[data-testid="stExpander"] details[open] summary {
+        border-radius: 8px 8px 0 0 !important;
+    }
+    div[data-testid="stExpander"] details > div {
+        border: 1px solid #1E3A5F !important;
+        border-top: none !important;
+        border-radius: 0 0 8px 8px !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -377,34 +404,13 @@ def main():
     }
     
     # ========================================================================
-    # PREDICTION BUTTON & INPUT SUMMARY (Centered, Same Row)
+    # PREDICTION BUTTON
     # ========================================================================
     st.markdown("---")
     
-    col_empty1, col_button, col_expander, col_empty2 = st.columns([0.5, 1, 1, 0.5])
-    
-    with col_button:
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
         predict_button = st.button("🔮 Predict Employee Turnover", use_container_width=True)
-    
-    with col_expander:
-        with st.expander("📋 Click to View Input Summary", expanded=False):
-            summary_df = pd.DataFrame({
-                'Feature': [
-                    '😊 Satisfaction Level',
-                    '📊 Last Evaluation',
-                    '📅 Years at Company',
-                    '📁 Number of Projects',
-                    '⏰ Average Monthly Hours'
-                ],
-                'Value': [
-                    f"{satisfaction_level:.2f}",
-                    f"{last_evaluation:.2f}",
-                    f"{time_spend_company} years",
-                    f"{number_project} projects",
-                    f"{average_monthly_hours} hours"
-                ]
-            })
-            st.dataframe(summary_df, use_container_width=True, hide_index=True)
     
     # ========================================================================
     # PREDICTION RESULTS
@@ -464,6 +470,32 @@ def main():
                 <div class="progress-bar-red" style="width: {prob_leave}%;"></div>
             </div>
             """, unsafe_allow_html=True)
+        
+        # ====================================================================
+        # INPUT SUMMARY (Collapsible Dropdown) - Centered like predict button
+        # ====================================================================
+        st.markdown("---")
+        
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            with st.expander("📋 Click to View Input Summary", expanded=False):
+                summary_df = pd.DataFrame({
+                    'Feature': [
+                        '😊 Satisfaction Level',
+                        '📊 Last Evaluation',
+                        '📅 Years at Company',
+                        '📁 Number of Projects',
+                        '⏰ Average Monthly Hours'
+                    ],
+                    'Value': [
+                        f"{satisfaction_level:.2f}",
+                        f"{last_evaluation:.2f}",
+                        f"{time_spend_company} years",
+                        f"{number_project} projects",
+                        f"{average_monthly_hours} hours"
+                    ]
+                })
+                st.dataframe(summary_df, use_container_width=True, hide_index=True)
 
 # ============================================================================
 # RUN APPLICATION
