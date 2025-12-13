@@ -62,69 +62,100 @@ st.markdown("""
         border: 1px solid #b8daff;
     }
     
-    /* ===== ATTRACTIVE PREDICT BUTTON STYLING - DARKER PROFESSIONAL THEME ===== */
+    /* ===== VIBRANT RAINBOW GRADIENT PREDICT BUTTON ===== */
     .stButton>button {
         width: 100%;
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #1a1a2e 75%, #16213e 100%);
-        background-size: 300% 300%;
+        background: linear-gradient(
+            45deg, 
+            #ff0080, #ff8c00, #40e0d0, #ff0080, #ff8c00
+        );
+        background-size: 400% 400%;
         color: white !important;
-        font-size: 1.3rem;
+        font-size: 1.4rem;
         font-weight: bold;
-        padding: 1rem 2rem;
+        padding: 1.2rem 2.5rem;
         border-radius: 50px;
-        border: 2px solid #4a90d9;
+        border: none;
         cursor: pointer;
         position: relative;
         overflow: hidden;
-        box-shadow: 0 4px 15px rgba(74, 144, 217, 0.3), 0 8px 30px rgba(26, 26, 46, 0.4);
-        transition: all 0.3s ease;
-        animation: darkGradient 4s ease infinite, subtleGlow 2.5s ease-in-out infinite;
+        box-shadow: 
+            0 4px 15px rgba(255, 0, 128, 0.4),
+            0 8px 30px rgba(255, 140, 0, 0.3),
+            0 0 40px rgba(64, 224, 208, 0.2);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        animation: gradientShift 3s ease infinite, pulse 2s ease-in-out infinite;
         text-transform: uppercase;
-        letter-spacing: 2px;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        letter-spacing: 3px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
     }
     
-    /* Dark gradient animation */
-    @keyframes darkGradient {
+    /* Gradient animation - shifting colors */
+    @keyframes gradientShift {
         0% { background-position: 0% 50%; }
         50% { background-position: 100% 50%; }
         100% { background-position: 0% 50%; }
     }
     
-    /* Subtle glow animation */
-    @keyframes subtleGlow {
+    /* Pulse glow animation */
+    @keyframes pulse {
         0% { 
-            box-shadow: 0 4px 15px rgba(74, 144, 217, 0.3), 0 8px 30px rgba(26, 26, 46, 0.4);
-            border-color: #4a90d9;
+            box-shadow: 
+                0 4px 15px rgba(255, 0, 128, 0.4),
+                0 8px 30px rgba(255, 140, 0, 0.3),
+                0 0 40px rgba(64, 224, 208, 0.2);
+            transform: scale(1);
         }
         50% { 
-            box-shadow: 0 4px 20px rgba(74, 144, 217, 0.5), 0 8px 40px rgba(26, 26, 46, 0.5), 0 0 30px rgba(74, 144, 217, 0.2);
-            border-color: #6ba3e0;
+            box-shadow: 
+                0 6px 25px rgba(255, 0, 128, 0.6),
+                0 12px 40px rgba(255, 140, 0, 0.5),
+                0 0 60px rgba(64, 224, 208, 0.4),
+                0 0 80px rgba(255, 0, 128, 0.2);
+            transform: scale(1.02);
         }
         100% { 
-            box-shadow: 0 4px 15px rgba(74, 144, 217, 0.3), 0 8px 30px rgba(26, 26, 46, 0.4);
-            border-color: #4a90d9;
+            box-shadow: 
+                0 4px 15px rgba(255, 0, 128, 0.4),
+                0 8px 30px rgba(255, 140, 0, 0.3),
+                0 0 40px rgba(64, 224, 208, 0.2);
+            transform: scale(1);
         }
     }
     
-    /* Hover effects */
+    /* Hover - Electric effect with different gradient */
     .stButton>button:hover {
-        transform: translateY(-4px) scale(1.02);
-        background: linear-gradient(135deg, #0f3460 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #1a1a2e 100%);
-        background-size: 300% 300%;
-        box-shadow: 0 8px 25px rgba(74, 144, 217, 0.5), 0 12px 40px rgba(26, 26, 46, 0.5), 0 0 50px rgba(74, 144, 217, 0.3);
-        border-color: #7bb3e8;
+        background: linear-gradient(
+            45deg, 
+            #00f5ff, #ff00ff, #ffff00, #00f5ff, #ff00ff
+        );
+        background-size: 400% 400%;
+        transform: translateY(-5px) scale(1.05);
+        box-shadow: 
+            0 10px 30px rgba(0, 245, 255, 0.5),
+            0 15px 50px rgba(255, 0, 255, 0.4),
+            0 0 100px rgba(255, 255, 0, 0.3),
+            inset 0 0 20px rgba(255, 255, 255, 0.1);
+        animation: gradientShift 1.5s ease infinite;
         color: white !important;
     }
     
-    /* Active/Click effect */
+    /* Active/Click - Neon burst effect */
     .stButton>button:active {
+        background: linear-gradient(
+            45deg, 
+            #ff3366, #ff6b35, #f7931e, #ffd700, #ff3366
+        );
+        background-size: 400% 400%;
         transform: translateY(2px) scale(0.98);
-        box-shadow: 0 2px 10px rgba(74, 144, 217, 0.4), 0 4px 20px rgba(26, 26, 46, 0.3);
+        box-shadow: 
+            0 2px 10px rgba(255, 51, 102, 0.6),
+            0 4px 20px rgba(255, 107, 53, 0.4),
+            inset 0 0 30px rgba(255, 255, 255, 0.2);
         color: white !important;
     }
     
-    /* Shimmer effect overlay */
+    /* Shimmer/shine effect overlay */
     .stButton>button::before {
         content: '';
         position: absolute;
@@ -133,28 +164,41 @@ st.markdown("""
         width: 100%;
         height: 100%;
         background: linear-gradient(
-            90deg,
+            120deg,
             transparent,
-            rgba(255, 255, 255, 0.15),
+            rgba(255, 255, 255, 0.4),
             transparent
         );
-        transition: left 0.6s ease;
+        transition: left 0.7s ease;
     }
     
     .stButton>button:hover::before {
         left: 100%;
     }
     
-    /* Focus effect */
-    .stButton>button:focus {
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.4), 0 4px 20px rgba(74, 144, 217, 0.5), 0 8px 30px rgba(26, 26, 46, 0.4);
-        color: white !important;
+    /* Sparkle particles effect */
+    .stButton>button::after {
+        content: '✨';
+        position: absolute;
+        font-size: 1.2rem;
+        right: 20px;
+        animation: sparkle 1.5s ease-in-out infinite;
     }
     
-    /* Smooth hover animation */
-    .stButton>button:hover {
-        animation: darkGradient 2s ease infinite;
+    @keyframes sparkle {
+        0%, 100% { opacity: 1; transform: scale(1) rotate(0deg); }
+        50% { opacity: 0.5; transform: scale(1.3) rotate(180deg); }
+    }
+    
+    /* Focus effect - Cyan glow ring */
+    .stButton>button:focus {
+        outline: none;
+        box-shadow: 
+            0 0 0 4px rgba(0, 245, 255, 0.5),
+            0 6px 25px rgba(255, 0, 128, 0.5),
+            0 12px 40px rgba(255, 140, 0, 0.4),
+            0 0 60px rgba(64, 224, 208, 0.3);
+        color: white !important;
     }
     
     /* Ensure text stays white in ALL states */
