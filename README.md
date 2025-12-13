@@ -66,7 +66,7 @@ employee-churn-prediction/
 ├── Data/
 │   └── HR_comma_sep.csv          # Dataset
 ├── Notebook/
-│   └── employee_churn_prediction.ipynb      # Jupyter notebook with full analysis
+│   └── Employee_Churn_Prediction.ipynb      # Jupyter notebook with full analysis
 ├── app.py                        # Streamlit web application
 ├── requirements.txt              # Python dependencies
 ├── LICENSE                       # MIT License
@@ -108,6 +108,7 @@ employee-churn-prediction/
 The dataset used is the **HR Analytics Dataset** from Kaggle.
 
 [![Open in Kaggle](https://kaggle.com/static/images/open-in-kaggle.svg)](https://www.kaggle.com/datasets/giripujar/hr-analytics)
+
 ---
 
 ## 🛠️ Installation
