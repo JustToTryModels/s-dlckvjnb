@@ -226,10 +226,12 @@ def main():
     if 'last_evaluation' not in st.session_state:
         st.session_state.last_evaluation = 0.7
     
-    # Create two columns for inputs
-    col1, col2 = st.columns(2)
+    # ========================================================================
+    # ROW 1: Satisfaction Level & Last Evaluation (side by side)
+    # ========================================================================
+    row1_col1, row1_col2 = st.columns(2)
     
-    with col1:
+    with row1_col1:
         # Satisfaction Level with both slider and number input
         st.write("😊 **Satisfaction Level**")
         sat_col1, sat_col2 = st.columns([3, 1])
@@ -265,38 +267,8 @@ def main():
             st.session_state.satisfaction_level = satisfaction_input
         else:
             satisfaction_level = st.session_state.satisfaction_level
-        
-        # Time Spent at Company
-        time_spend_company = st.number_input(
-            "📅 Years at Company",
-            min_value=1,
-            max_value=40,
-            value=3,
-            step=1,
-            help="Number of years the employee has worked at the company"
-        )
-        
-        # Average Monthly Hours
-        average_monthly_hours = st.number_input(
-            "⏰ Average Monthly Hours",
-            min_value=80,
-            max_value=350,
-            value=200,
-            step=5,
-            help="Average number of hours worked per month"
-        )
     
-    with col2:
-        # Number of Projects
-        number_project = st.number_input(
-            "📁 Number of Projects",
-            min_value=1,
-            max_value=10,
-            value=4,
-            step=1,
-            help="Number of projects the employee is currently working on"
-        )
-        
+    with row1_col2:
         # Last Evaluation with both slider and number input
         st.write("📊 **Last Evaluation Score**")
         eval_col1, eval_col2 = st.columns([3, 1])
@@ -332,6 +304,49 @@ def main():
             st.session_state.last_evaluation = evaluation_input
         else:
             last_evaluation = st.session_state.last_evaluation
+    
+    # ========================================================================
+    # ROW 2: Years at Company & Number of Projects (side by side)
+    # ========================================================================
+    row2_col1, row2_col2 = st.columns(2)
+    
+    with row2_col1:
+        # Time Spent at Company
+        time_spend_company = st.number_input(
+            "📅 Years at Company",
+            min_value=1,
+            max_value=40,
+            value=3,
+            step=1,
+            help="Number of years the employee has worked at the company"
+        )
+    
+    with row2_col2:
+        # Number of Projects
+        number_project = st.number_input(
+            "📁 Number of Projects",
+            min_value=1,
+            max_value=10,
+            value=4,
+            step=1,
+            help="Number of projects the employee is currently working on"
+        )
+    
+    # ========================================================================
+    # ROW 3: Average Monthly Hours
+    # ========================================================================
+    row3_col1, row3_col2 = st.columns(2)
+    
+    with row3_col1:
+        # Average Monthly Hours
+        average_monthly_hours = st.number_input(
+            "⏰ Average Monthly Hours",
+            min_value=80,
+            max_value=350,
+            value=200,
+            step=5,
+            help="Average number of hours worked per month"
+        )
     
     # Create input dictionary
     input_data = {
@@ -442,23 +457,23 @@ def main():
             """, unsafe_allow_html=True)
         
         # ====================================================================
-        # INPUT SUMMARY (Collapsible Dropdown) - Moved to end
+        # INPUT SUMMARY (Collapsible Dropdown) - At the end
         # ====================================================================
         with st.expander("📋 Click to View Input Summary", expanded=False):
             summary_df = pd.DataFrame({
                 'Feature': [
                     '😊 Satisfaction Level',
+                    '📊 Last Evaluation',
                     '📅 Years at Company',
-                    '⏰ Average Monthly Hours',
                     '📁 Number of Projects',
-                    '📊 Last Evaluation'
+                    '⏰ Average Monthly Hours'
                 ],
                 'Value': [
                     f"{satisfaction_level:.2f}",
+                    f"{last_evaluation:.2f}",
                     f"{time_spend_company} years",
-                    f"{average_monthly_hours} hours",
                     f"{number_project} projects",
-                    f"{last_evaluation:.2f}"
+                    f"{average_monthly_hours} hours"
                 ]
             })
             
