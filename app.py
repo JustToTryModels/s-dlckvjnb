@@ -110,6 +110,36 @@ st.markdown("""
         border-radius: 10px;
         transition: width 0.5s ease-in-out;
     }
+    /* Blue expander styling */
+    .blue-expander .streamlit-expanderHeader {
+        background-color: #007bff !important;
+        color: white !important;
+        border-radius: 8px !important;
+        font-size: 1.2rem !important;
+        padding: 0.75rem !important;
+    }
+    .blue-expander .streamlit-expanderHeader:hover {
+        background-color: #0056b3 !important;
+    }
+    /* Custom expander styling */
+    div[data-testid="stExpander"] {
+        border: none !important;
+    }
+    div[data-testid="stExpander"] > div:first-child {
+        background-color: #007bff !important;
+        border-radius: 8px !important;
+    }
+    div[data-testid="stExpander"] > div:first-child > div > div > p {
+        color: white !important;
+        font-size: 1.2rem !important;
+        font-weight: 500 !important;
+    }
+    div[data-testid="stExpander"] > div:first-child:hover {
+        background-color: #0056b3 !important;
+    }
+    div[data-testid="stExpander"] svg {
+        fill: white !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -358,13 +388,34 @@ def main():
     }
     
     # ========================================================================
-    # PREDICTION BUTTON
+    # PREDICTION BUTTON & INPUT SUMMARY (Same Line)
     # ========================================================================
     st.markdown("---")
     
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
+    btn_col1, btn_col2 = st.columns(2)
+    
+    with btn_col1:
         predict_button = st.button("🔮 Predict Employee Turnover", use_container_width=True)
+    
+    with btn_col2:
+        with st.expander("📋 Click to View Input Summary", expanded=False):
+            summary_df = pd.DataFrame({
+                'Feature': [
+                    '😊 Satisfaction Level',
+                    '📊 Last Evaluation',
+                    '📅 Years at Company',
+                    '📁 Number of Projects',
+                    '⏰ Average Monthly Hours'
+                ],
+                'Value': [
+                    f"{satisfaction_level:.2f}",
+                    f"{last_evaluation:.2f}",
+                    f"{time_spend_company} years",
+                    f"{number_project} projects",
+                    f"{average_monthly_hours} hours"
+                ]
+            })
+            st.dataframe(summary_df, use_container_width=True, hide_index=True)
     
     # ========================================================================
     # PREDICTION RESULTS
@@ -424,62 +475,6 @@ def main():
                 <div class="progress-bar-red" style="width: {prob_leave}%;"></div>
             </div>
             """, unsafe_allow_html=True)
-        
-        # ====================================================================
-        # CONFIDENCE LEVEL
-        # ====================================================================
-        st.markdown("---")
-        
-        max_prob = max(prob_stay, prob_leave)
-        
-        if max_prob >= 80:
-            confidence = "🟢 High Confidence"
-            confidence_color = "#28a745"
-            confidence_desc = "The model is very confident in this prediction."
-        elif max_prob >= 60:
-            confidence = "🟡 Moderate Confidence"
-            confidence_color = "#ffc107"
-            confidence_desc = "The model has moderate confidence. Consider additional factors."
-        else:
-            confidence = "🔴 Low Confidence"
-            confidence_color = "#dc3545"
-            confidence_desc = "The prediction is uncertain. More information may be needed."
-        
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            st.markdown(f"""
-            <div style="background-color: #f8f9fa; padding: 1.5rem; border-radius: 10px; 
-                        border-left: 5px solid {confidence_color}; text-align: center;">
-                <h3 style="margin: 0;">{confidence}</h3>
-                <p style="margin: 0.5rem 0 0 0; color: #666;">{confidence_desc}</p>
-                <p style="margin: 0.5rem 0 0 0;"><strong>Confidence Score: {max_prob:.1f}%</strong></p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # ====================================================================
-        # INPUT SUMMARY (Collapsible Dropdown) - At the end
-        # ====================================================================
-        with st.expander("📋 Click to View Input Summary", expanded=False):
-            summary_df = pd.DataFrame({
-                'Feature': [
-                    '😊 Satisfaction Level',
-                    '📊 Last Evaluation',
-                    '📅 Years at Company',
-                    '📁 Number of Projects',
-                    '⏰ Average Monthly Hours'
-                ],
-                'Value': [
-                    f"{satisfaction_level:.2f}",
-                    f"{last_evaluation:.2f}",
-                    f"{time_spend_company} years",
-                    f"{number_project} projects",
-                    f"{average_monthly_hours} hours"
-                ]
-            })
-            
-            col1, col2, col3 = st.columns([1, 2, 1])
-            with col2:
-                st.dataframe(summary_df, use_container_width=True, hide_index=True)
 
 # ============================================================================
 # RUN APPLICATION
