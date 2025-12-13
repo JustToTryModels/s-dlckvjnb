@@ -322,3 +322,7 @@ The organization is facing a dual crisis of **burnout and stagnation**, systemat
 | **The Fix** | Conduct "Stay Interviews" in these specific departments to identify local stressors immediately |
 
 ---
+
+<div align="center">
+  <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDd2OWtkZnd4MmNtMGE0dHNqeTh4M3p0Ym5jY3F1bHB0ZzV6aWVzbiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/ZfK4cXKJTTay1Ava29/giphy.gif" alt="Thank You" width="400">
+</div>
