@@ -20,7 +20,7 @@ st.set_page_config(
 # ============================================================================
 st.markdown("""
 <style>
-    /* Center the main content with max-width */
+    /* Center the main content with max-width - FROM CODE 2 */
     .block-container {
         max-width: 1200px !important;
         padding-left: 5rem !important;
@@ -413,7 +413,7 @@ def main():
         return
     
     # ========================================================================
-    # SIDEBAR (Copied exactly from Code-1)
+    # SIDEBAR (COPIED EXACTLY FROM CODE-1)
     # ========================================================================
     with st.sidebar:
         st.header("ℹ️ Model Information")
