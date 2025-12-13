@@ -64,7 +64,7 @@ st.markdown("""
     
     /* INPUT CARDS - Light Cream Background */
     .feature-card {
-        background-color: #FBF1F2;
+        background-color: #F4F6F8;
         border-radius: 12px;
         padding: 1.5rem;
         box-shadow: 0 4px 12px rgba(0,0,0,0.05);
