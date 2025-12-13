@@ -1,8 +1,6 @@
 # 🏢 Employee Churn Prediction
 A machine learning project to predict employee attrition, helping organizations identify at-risk employees and take proactive retention measures.
 
-[![Open Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://employee-turnover-predictor.streamlit.app/)
-
 ---
 
 ## 📋 Table of Contents
@@ -58,7 +56,7 @@ Predict whether an employee will leave the company based on various factors such
 
 Try the live prediction model here:
 
-**🔗 [Employee Turnover Predictor App](https://employee-turnover-predictor.streamlit.app/)**
+🔗[![Open Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://employee-turnover-predictor.streamlit.app/) 
 
 Enter employee details and get instant predictions on their likelihood of leaving!
 
