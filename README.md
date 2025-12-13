@@ -81,7 +81,7 @@ employee-churn-prediction/
 
 | Metric | Value |
 |--------|-------|
-| **Total Samples** | 11,991 |
+| **Total Samples** | 11,991 (Non-Duplicate) |
 | **Stayed (Class 0)** | 10,000 (83.40%) |
 | **Left (Class 1)** | 1,991 (16.60%) |
 
