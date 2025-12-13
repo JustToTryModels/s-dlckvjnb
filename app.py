@@ -62,170 +62,117 @@ st.markdown("""
         border: 1px solid #b8daff;
     }
     
-    /* ===== SHINY DARK BUTTON WITH ANIMATED GRADIENT BORDER ===== */
+    /* ===== ATTRACTIVE PREDICT BUTTON STYLING - VIBRANT PURPLE TO PINK THEME ===== */
     .stButton>button {
-        /* Base styling */
         width: 100%;
-        background-color: #040404;
-        color: #ffffff !important;
-        font-size: 1.2rem;
-        font-weight: 600;
-        padding: 16px 28px;
-        border-radius: 99px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #667eea 100%);
+        background-size: 400% 400%;
+        color: white !important;
+        font-size: 1.3rem;
+        font-weight: bold;
+        padding: 1rem 2rem;
+        border-radius: 50px;
         border: none;
         cursor: pointer;
         position: relative;
         overflow: hidden;
-        isolation: isolate;
-        z-index: 1;
-        
-        /* Text styling */
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4), 0 8px 30px rgba(118, 75, 162, 0.3);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        animation: gradientFlow 5s ease infinite, pulseGlow 2s ease-in-out infinite;
         text-transform: uppercase;
-        letter-spacing: 1.5px;
-        text-decoration: none;
-        
-        /* Flexbox centering */
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 8px;
-        
-        /* Transitions */
-        transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-        
-        /* Shadow */
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        letter-spacing: 2px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
     
-    /* Animated gradient border using ::before pseudo-element */
-    .stButton>button::before {
-        content: '';
-        position: absolute;
-        top: -2px;
-        left: -2px;
-        right: -2px;
-        bottom: -2px;
-        z-index: -2;
-        border-radius: 99px;
-        background: linear-gradient(
-            var(--gradient-angle, 0deg),
-            #ff0080,
-            #ff8c00,
-            #40e0d0,
-            #7b68ee,
-            #ff0080
-        );
-        background-size: 300% 300%;
-        animation: rotateGradient 3s linear infinite;
+    /* Flowing gradient animation */
+    @keyframes gradientFlow {
+        0% { background-position: 0% 50%; }
+        25% { background-position: 50% 100%; }
+        50% { background-position: 100% 50%; }
+        75% { background-position: 50% 0%; }
+        100% { background-position: 0% 50%; }
     }
     
-    /* Inner background to create border effect */
-    .stButton>button::after {
-        content: '';
-        position: absolute;
-        top: 2px;
-        left: 2px;
-        right: 2px;
-        bottom: 2px;
-        z-index: -1;
-        border-radius: 99px;
-        background: #040404;
-        transition: background 0.3s ease;
-    }
-    
-    /* Gradient rotation animation */
-    @keyframes rotateGradient {
-        0% {
-            background-position: 0% 50%;
-            filter: hue-rotate(0deg);
+    /* Pulsing glow animation */
+    @keyframes pulseGlow {
+        0% { 
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4), 0 8px 30px rgba(118, 75, 162, 0.3);
+            transform: scale(1);
         }
-        50% {
-            background-position: 100% 50%;
+        50% { 
+            box-shadow: 0 6px 25px rgba(240, 147, 251, 0.5), 0 10px 40px rgba(245, 87, 108, 0.4), 0 0 40px rgba(102, 126, 234, 0.3);
+            transform: scale(1.01);
         }
-        100% {
-            background-position: 0% 50%;
-            filter: hue-rotate(360deg);
-        }
-    }
-    
-    /* Shiny sweep effect */
-    .stButton>button .shiny-effect {
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 50%;
-        height: 100%;
-        background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(255, 255, 255, 0.15),
-            transparent
-        );
-        animation: shinySweep 3s ease-in-out infinite;
-        z-index: 2;
-        pointer-events: none;
-    }
-    
-    @keyframes shinySweep {
-        0% {
-            left: -100%;
-        }
-        50%, 100% {
-            left: 150%;
+        100% { 
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4), 0 8px 30px rgba(118, 75, 162, 0.3);
+            transform: scale(1);
         }
     }
     
     /* Hover effects */
     .stButton>button:hover {
-        transform: translateY(-3px) scale(1.02);
-        box-shadow: 
-            0 8px 30px rgba(0, 0, 0, 0.4),
-            0 0 40px rgba(255, 0, 128, 0.2),
-            0 0 60px rgba(64, 224, 208, 0.15);
-        color: #ffffff !important;
-    }
-    
-    .stButton>button:hover::before {
-        animation: rotateGradient 1.5s linear infinite;
-    }
-    
-    .stButton>button:hover::after {
-        background: #0a0a0a;
+        transform: translateY(-5px) scale(1.03);
+        background: linear-gradient(135deg, #f5576c 0%, #f093fb 25%, #764ba2 50%, #667eea 75%, #f5576c 100%);
+        background-size: 400% 400%;
+        box-shadow: 0 10px 30px rgba(240, 147, 251, 0.5), 0 15px 50px rgba(118, 75, 162, 0.4), 0 0 60px rgba(245, 87, 108, 0.3);
+        color: white !important;
     }
     
     /* Active/Click effect */
     .stButton>button:active {
-        transform: translateY(1px) scale(0.98);
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-        color: #ffffff !important;
+        transform: translateY(2px) scale(0.98);
+        box-shadow: 0 2px 10px rgba(102, 126, 234, 0.5), 0 4px 20px rgba(118, 75, 162, 0.3);
+        color: white !important;
+    }
+    
+    /* Shimmer effect overlay */
+    .stButton>button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.3),
+            transparent
+        );
+        transition: left 0.7s ease;
+    }
+    
+    .stButton>button:hover::before {
+        left: 100%;
+    }
+    
+    /* Sparkle effect */
+    .stButton>button::after {
+        content: '✨';
+        position: absolute;
+        top: 50%;
+        right: 20px;
+        transform: translateY(-50%);
+        font-size: 1.2rem;
+        opacity: 0;
+        transition: all 0.3s ease;
+    }
+    
+    .stButton>button:hover::after {
+        opacity: 1;
+        right: 15px;
     }
     
     /* Focus effect */
     .stButton>button:focus {
         outline: none;
-        box-shadow: 
-            0 0 0 4px rgba(255, 0, 128, 0.3),
-            0 4px 20px rgba(0, 0, 0, 0.3);
-        color: #ffffff !important;
+        box-shadow: 0 0 0 4px rgba(240, 147, 251, 0.4), 0 6px 25px rgba(102, 126, 234, 0.5), 0 10px 40px rgba(118, 75, 162, 0.4);
+        color: white !important;
     }
     
-    /* Pulsing glow animation on idle */
-    @keyframes pulseGlow {
-        0%, 100% {
-            box-shadow: 
-                0 4px 20px rgba(0, 0, 0, 0.3),
-                0 0 20px rgba(255, 0, 128, 0.1);
-        }
-        50% {
-            box-shadow: 
-                0 4px 25px rgba(0, 0, 0, 0.35),
-                0 0 35px rgba(64, 224, 208, 0.15),
-                0 0 50px rgba(123, 104, 238, 0.1);
-        }
-    }
-    
-    .stButton>button {
-        animation: pulseGlow 4s ease-in-out infinite;
+    /* Smooth hover animation speed up */
+    .stButton>button:hover {
+        animation: gradientFlow 2s ease infinite;
     }
     
     /* Ensure text stays white in ALL states */
@@ -246,8 +193,7 @@ st.markdown("""
     .stButton>button:hover div,
     .stButton>button:active div,
     .stButton>button:focus div {
-        color: #ffffff !important;
-        -webkit-text-fill-color: #ffffff !important;
+        color: white !important;
     }
     
     .info-box {
