@@ -16,9 +16,6 @@ A machine learning project to predict employee attrition, helping organizations 
 - [Results](#-results)
 - [Key Findings](#-key-findings)
 - [Strategic Recommendations](#-strategic-recommendations)
-- [Limitations & Future Work](#-limitations--future-work)
-- [Contributing](#-contributing)
-- [License](#-license)
 
 ---
 
