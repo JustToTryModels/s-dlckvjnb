@@ -147,7 +147,7 @@ The dataset used is the **HR Analytics Dataset** from Kaggle.
 streamlit run app.py
 ```
 
-The app will open in your default browser at `http://localhost:8501`
+The app will open in the default browser at `http://localhost:8501`
 
 ### Explore the Analysis Notebook
 
@@ -232,14 +232,14 @@ jupyter notebook Notebook/Employee_Churn_Prediction.ipynb
 
 ### Summary
 
-The organization is facing a dual crisis of **burnout and stagnation**, systematically losing its most valuable employees. While low satisfaction (median 0.41 for leavers) is the immediate trigger, the root causes are structural: unsustainable workloads, a near-total lack of career progression, and compensation that fails to reward high effort.
+The organisation is facing a dual crisis of **burnout and stagnation**, systematically losing its most valuable employees. While low satisfaction (median 0.41 for leavers) is the immediate trigger, the root causes are structural: unsustainable workloads, a near-total lack of career progression, and compensation that fails to reward high effort.
 
 ### The Core Predictors of Turnover
 
 | Metric | Employees Who Stayed | Employees Who Left | Key Insight |
 |--------|----------------------|--------------------|-------------|
 | Median Satisfaction | 0.69 | 0.41 | Low satisfaction is the common denominator for all departures |
-| Median Evaluation | 0.71 | 0.79 | You are systematically losing your highest-performing employees |
+| Median Evaluation | 0.71 | 0.79 | The organisation is systematically losing its highest-performing employees |
 | Median Monthly Hours | 198 | 226 | Leavers are pushed significantly harder |
 | Promoted (Last 5 Yrs) | 1.8% | 0.3% | Promotions are a powerful yet neglected retention tool |
 
@@ -295,16 +295,16 @@ The organization is facing a dual crisis of **burnout and stagnation**, systemat
 | Action | Details |
 |--------|---------|
 | **The Rule** | Implement a mandatory career review at the 3-year mark |
-| **The Fix** | Create a clear promotion path. With only 1.69% of staff promoted in 5 years, experienced staff are forced to leave to advance |
+| **The Fix** | Create a clear promotion path. With only 1.69% of staff promoted in 5 years, the organisation is forcing its experienced staff to leave to advance their careers |
 | **Why** | Promoted employees have ~4% churn rate vs. ~17% for non-promoted |
 
 ### 3. 💵 Pay High Performers Fairly
 
 | Action | Details |
 |--------|---------|
-| **The Rule** | Stop underpaying your hardest workers |
-| **The Fix** | Audit Low and Medium salary brackets. Identify employees with High Evaluations (>0.8) and give them raises or bonuses |
-| **Why** | You are losing top talent because they work the most hours but get the lowest pay |
+| **The Rule** | Stop underpaying the hardest workers |
+| **The Fix** | Audit Low and Medium salary brackets. Identify employees with High Evaluations (>0.8) and provide raises or bonuses |
+| **Why** | The organisation is losing top talent because they work the most hours but receive the lowest pay |
 
 ### 4. 🎯 Engage the Under-Utilized
 
@@ -328,5 +328,5 @@ The organization is facing a dual crisis of **burnout and stagnation**, systemat
 <div align="center">
   <img src="https://github.com/JustToTryModels/IMAGES/blob/main/thank-you-33.gif?raw=true" alt="Thank You" width="400">
   
-  If you found this helpful, please consider giving it a ⭐
+  If this project was helpful, please consider giving it a ⭐
 </div>
