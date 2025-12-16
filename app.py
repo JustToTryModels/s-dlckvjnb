@@ -1,637 +1,398 @@
 import streamlit as st
-import joblib
-import json
-import pandas as pd
-import numpy as np
-from huggingface_hub import hf_hub_download
-
-# ============================================================================
-# PAGE CONFIGURATION
-# ============================================================================
-st.set_page_config(
-    page_title="Employee Turnover Prediction",
-    page_icon="👥",
-    layout="wide",
-    initial_sidebar_state="collapsed"
+import torch
+from transformers import (
+    GPT2Tokenizer, GPT2LMHeadModel,
+    AutoTokenizer, AutoModelForSequenceClassification
 )
+import spacy
+import time
+import random
 
-# ============================================================================
-# CUSTOM CSS STYLING
-# ============================================================================
-st.markdown("""
-<style>
-    /* Center the main content with max-width */
-    .block-container {
-        max-width: 1200px !important;
-        padding-left: 5rem !important;
-        padding-right: 5rem !important;
-        margin: 0 auto !important;
-    }
-    
-    .main-header {
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: #1E3A5F;
-        text-align: center;
-        margin-bottom: 0.5rem;
-    }
-    .sub-header {
-        font-size: 1.2rem;
-        color: #666;
-        text-align: center;
-        margin-bottom: 2rem;
-    }
-    .section-header {
-        font-size: 1.5rem;
-        font-weight: bold;
-        color: #1E3A5F;
-        text-align: center;
-        margin-bottom: 1.5rem;
-    }
-    .prediction-box {
-        padding: 2rem;
-        border-radius: 10px;
-        text-align: center;
-        margin: 1rem 0;
-    }
-    .stay-prediction {
-        background-color: #d4edda;
-        border: 2px solid #28a745;
-    }
-    .leave-prediction {
-        background-color: #f8d7da;
-        border: 2px solid #dc3545;
-    }
-    .metric-card {
-        background-color: #f8f9fa;
-        padding: 1rem;
-        border-radius: 8px;
-        border-left: 4px solid #007bff;
-        margin: 0.5rem 0;
-    }
-    .feature-box {
-        background-color: #e7f3ff;
-        padding: 1.5rem;
-        border-radius: 10px;
-        margin: 1rem 0;
-        border: 1px solid #b8daff;
-    }
-    
-    /* INPUT CARDS - Light Cream Background */
-    .feature-card {
-        background-color: #FFE8C2;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        border-left: 5px solid #1E3A5F;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        margin-bottom: 1rem;
-    }
-    .feature-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-    }
-    
-    /* ===== VIBRANT RAINBOW GRADIENT PREDICT BUTTON ===== */
-    .stButton>button {
-        width: 100%;
-        background: linear-gradient(
-            45deg, 
-            #ff0080, #ff8c00, #40e0d0, #ff0080, #ff8c00
-        );
-        background-size: 400% 400%;
-        color: white !important;
-        font-size: 1.4rem;
-        font-weight: 900 !important;
-        padding: 1.2rem 2.5rem;
-        border-radius: 50px;
-        border: none !important;
-        outline: none !important;
-        cursor: pointer;
-        position: relative;
-        overflow: hidden;
-        box-shadow: 
-            0 4px 15px rgba(255, 0, 128, 0.4),
-            0 8px 30px rgba(255, 140, 0, 0.3),
-            0 0 40px rgba(64, 224, 208, 0.2);
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        animation: gradientShift 3s ease infinite, pulse 2s ease-in-out infinite;
-        text-transform: uppercase;
-        letter-spacing: 3px;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-    }
-    
-    /* Gradient animation - shifting colors */
-    @keyframes gradientShift {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-    
-    /* Pulse glow animation */
-    @keyframes pulse {
-        0% { 
-            box-shadow: 
-                0 4px 15px rgba(255, 0, 128, 0.4),
-                0 8px 30px rgba(255, 140, 0, 0.3),
-                0 0 40px rgba(64, 224, 208, 0.2);
-            transform: scale(1);
-        }
-        50% { 
-            box-shadow: 
-                0 6px 25px rgba(255, 0, 128, 0.6),
-                0 12px 40px rgba(255, 140, 0, 0.5),
-                0 0 60px rgba(64, 224, 208, 0.4),
-                0 0 80px rgba(255, 0, 128, 0.2);
-            transform: scale(1.02);
-        }
-        100% { 
-            box-shadow: 
-                0 4px 15px rgba(255, 0, 128, 0.4),
-                0 8px 30px rgba(255, 140, 0, 0.3),
-                0 0 40px rgba(64, 224, 208, 0.2);
-            transform: scale(1);
-        }
-    }
-    
-    /* Hover - Electric effect with different gradient */
-    .stButton>button:hover {
-        background: linear-gradient(
-            45deg, 
-            #00f5ff, #ff00ff, #ffff00, #00f5ff, #ff00ff
-        );
-        background-size: 400% 400%;
-        transform: translateY(-5px) scale(1.01);
-        box-shadow: 
-            0 10px 30px rgba(0, 245, 255, 0.5),
-            0 15px 50px rgba(255, 0, 255, 0.4),
-            0 0 100px rgba(255, 255, 0, 0.3),
-            inset 0 0 20px rgba(255, 255, 255, 0.1);
-        animation: gradientShift 1.5s ease infinite;
-        color: white !important;
-        border: none !important;
-        outline: none !important;
-        font-weight: 900 !important;
-    }
-    
-    /* Active/Click - Neon burst effect */
-    .stButton>button:active {
-        background: linear-gradient(
-            45deg, 
-            #ff3366, #ff6b35, #f7931e, #ffd700, #ff3366
-        );
-        background-size: 400% 400%;
-        transform: translateY(2px) scale(0.98);
-        box-shadow: 
-            0 2px 10px rgba(255, 51, 102, 0.6),
-            0 4px 20px rgba(255, 107, 53, 0.4),
-            inset 0 0 30px rgba(255, 255, 255, 0.2);
-        color: white !important;
-        border: none !important;
-        outline: none !important;
-        font-weight: 900 !important;
-    }
-    
-    /* Shimmer/shine effect overlay */
-    .stButton>button::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(
-            120deg,
-            transparent,
-            rgba(255, 255, 255, 0.4),
-            transparent
-        );
-        transition: left 0.7s ease;
-    }
-    
-    .stButton>button:hover::before {
-        left: 100%;
-    }
-    
-    /* Sparkle particles effect */
-    .stButton>button::after {
-        content: '✨';
-        position: absolute;
-        font-size: 1.2rem;
-        right: 20px;
-        animation: sparkle 1.5s ease-in-out infinite;
-    }
-    
-    @keyframes sparkle {
-        0%, 100% { opacity: 1; transform: scale(1) rotate(0deg); }
-        50% { opacity: 0.5; transform: scale(1.3) rotate(180deg); }
-    }
-    
-    /* Focus effect - Remove blue border completely */
-    .stButton>button:focus {
-        outline: none !important;
-        border: none !important;
-        box-shadow: 
-            0 4px 15px rgba(255, 0, 128, 0.4),
-            0 8px 30px rgba(255, 140, 0, 0.3),
-            0 0 40px rgba(64, 224, 208, 0.2);
-        color: white !important;
-        font-weight: 900 !important;
-    }
-    
-    /* Focus-visible - Remove blue border completely */
-    .stButton>button:focus-visible {
-        outline: none !important;
-        border: none !important;
-        box-shadow: 
-            0 4px 15px rgba(255, 0, 128, 0.4),
-            0 8px 30px rgba(255, 140, 0, 0.3),
-            0 0 40px rgba(64, 224, 208, 0.2);
-        font-weight: 900 !important;
-    }
-    
-    /* Remove focus ring from button container as well */
-    .stButton>button:focus:not(:focus-visible) {
-        outline: none !important;
-        border: none !important;
-    }
-    
-    /* Ensure text stays white in ALL states */
-    .stButton>button,
-    .stButton>button:hover,
-    .stButton>button:active,
-    .stButton>button:focus,
-    .stButton>button:focus-visible,
-    .stButton>button:visited,
-    .stButton>button span,
-    .stButton>button:hover span,
-    .stButton>button:active span,
-    .stButton>button:focus span,
-    .stButton>button p,
-    .stButton>button:hover p,
-    .stButton>button:active p,
-    .stButton>button:focus p,
-    .stButton>button div,
-    .stButton>button:hover div,
-    .stButton>button:active div,
-    .stButton>button:focus div {
-        color: white !important;
-        outline: none !important;
-        border: none !important;
-        font-weight: 900 !important;
-    }
-    
-    .info-box {
-        background-color: #fff3cd;
-        border: 1px solid #ffc107;
-        border-radius: 8px;
-        padding: 1rem;
-        margin: 1rem 0;
-    }
-    .progress-bar-container {
-        width: 100%;
-        background-color: #e9ecef;
-        border-radius: 10px;
-        margin: 5px 0 15px 0;
-        height: 25px;
-        overflow: hidden;
-    }
-    .progress-bar-green {
-        height: 100%;
-        background-color: #28a745;
-        border-radius: 10px;
-        transition: width 0.5s ease-in-out;
-    }
-    .progress-bar-red {
-        height: 100%;
-        background-color: #dc3545;
-        border-radius: 10px;
-        transition: width 0.5s ease-in-out;
-    }
-    
-    /* Blue styled expander */
-    div[data-testid="stExpander"] {
-        border: none !important;
-        border-radius: 8px !important;
-    }
-    div[data-testid="stExpander"] details {
-        border: none !important;
-    }
-    div[data-testid="stExpander"] details summary {
-        background-color: #1E3A5F !important;
-        color: white !important;
-        border-radius: 8px !important;
-        padding: 0.75rem 1rem !important;
-        font-size: 1.2rem !important;
-        font-weight: 500 !important;
-    }
-    div[data-testid="stExpander"] details summary:hover {
-        background-color: #2E5A8F !important;
-        color: white !important;
-    }
-    div[data-testid="stExpander"] details summary svg {
-        color: white !important;
-        fill: white !important;
-    }
-    div[data-testid="stExpander"] details[open] summary {
-        border-radius: 8px 8px 0 0 !important;
-    }
-    div[data-testid="stExpander"] details > div {
-        border: 1px solid #1E3A5F !important;
-        border-top: none !important;
-        border-radius: 0 0 8px 8px !important;
-    }
-</style>
-""", unsafe_allow_html=True)
+# =============================
+# MODEL AND CONFIGURATION SETUP
+# =============================
 
-# ============================================================================
-# CONFIGURATION
-# ============================================================================
-HF_REPO_ID = "Zlib2/RFC"
-MODEL_FILENAME = "final_random_forest_model.joblib"
+# Hugging Face model IDs
+DistilGPT2_MODEL_ID = "IamPradeep/AETCSCB_OOD_IC_DistilGPT2_Fine-tuned"
+CLASSIFIER_ID = "IamPradeep/Query_Classifier_DistilBERT"
 
-# Define the 5 selected features (in exact order)
-BEST_FEATURES = [
-    "satisfaction_level",
-    "time_spend_company", 
-    "average_monthly_hours",
-    "number_project",
-    "last_evaluation"
+# Random OOD Fallback Responses
+fallback_responses = [
+    "I’m sorry, but I am unable to assist with this request. If you need help regarding event tickets, I’d be happy to support you.",
+    "Apologies, but I am not able to provide assistance on this matter. Please let me know if you require help with event tickets.",
+    "Unfortunately, I cannot assist with this. However, I am here to help with any event ticket-related concerns you may have.",
+    "Regrettably, I am unable to assist with this request. If there's anything I can do regarding event tickets, feel free to ask.",
+    "I regret that I am unable to assist in this case. Please reach out if you need support related to event tickets.",
+    "Apologies, but this falls outside the scope of my support. I’m here if you need any help with event ticket issues.",
+    "I'm sorry, but I cannot assist with this particular topic. If you have questions about event tickets, I’d be glad to help.",
+    "I regret that I’m unable to provide assistance here. Please let me know how I can support you with event ticket matters.",
+    "Unfortunately, I am not equipped to assist with this. If you need help with event tickets, I am here for that.",
+    "I apologize, but I cannot help with this request. However, I’d be happy to assist with anything related to event tickets.",
+    "I’m sorry, but I’m unable to support this request. If it’s about event tickets, I’ll gladly help however I can.",
+    "This matter falls outside the assistance I can offer. Please let me know if you need help with event ticket-related inquiries.",
+    "Regrettably, this is not something I can assist with. I’m happy to help with any event ticket questions you may have.",
+    "I’m unable to provide support for this issue. However, I can assist with concerns regarding event tickets.",
+    "I apologize, but I cannot help with this matter. If your inquiry is related to event tickets, I’d be more than happy to assist.",
+    "I regret that I am unable to offer help in this case. I am, however, available for any event ticket-related questions.",
+    "Unfortunately, I’m not able to assist with this. Please let me know if there’s anything I can do regarding event tickets.",
+    "I'm sorry, but I cannot assist with this topic. However, I’m here to help with any event ticket concerns you may have.",
+    "Apologies, but this request falls outside of my support scope. If you need help with event tickets, I’m happy to assist.",
+    "I’m afraid I can’t help with this matter. If there’s anything related to event tickets you need, feel free to reach out.",
+    "This is beyond what I can assist with at the moment. Let me know if there’s anything I can do to help with event tickets.",
+    "Sorry, I’m unable to provide support on this issue. However, I’d be glad to assist with event ticket-related topics.",
+    "Apologies, but I can’t assist with this. Please let me know if you have any event ticket inquiries I can help with.",
+    "I’m unable to help with this matter. However, if you need assistance with event tickets, I’m here for you.",
+    "Unfortunately, I can’t support this request. I’d be happy to assist with anything related to event tickets instead.",
+    "I’m sorry, but I can’t help with this. If your concern is related to event tickets, I’ll do my best to assist.",
+    "Apologies, but this issue is outside of my capabilities. However, I’m available to help with event ticket-related requests.",
+    "I regret that I cannot assist with this particular matter. Please let me know how I can support you regarding event tickets.",
+    "I’m sorry, but I’m not able to help in this instance. I am, however, ready to assist with any questions about event tickets.",
+    "Unfortunately, I’m unable to help with this topic. Let me know if there's anything event ticket-related I can support you with."
 ]
 
-# ============================================================================
-# LOAD MODEL FROM HUGGING FACE
-# ============================================================================
+# =============================
+# MODEL LOADING FUNCTIONS
+# =============================
+
 @st.cache_resource
-def load_model_from_huggingface():
-    """Load the trained model from Hugging Face Hub"""
+def load_spacy_model():
+    nlp = spacy.load("en_core_web_trf")
+    return nlp
+
+@st.cache_resource(show_spinner=False)
+def load_gpt2_model_and_tokenizer():
     try:
-        model_path = hf_hub_download(
-            repo_id=HF_REPO_ID,
-            filename=MODEL_FILENAME,
-            repo_type="model"
-        )
-        model = joblib.load(model_path)
-        return model
+        model = GPT2LMHeadModel.from_pretrained(DistilGPT2_MODEL_ID, trust_remote_code=True)
+        tokenizer = GPT2Tokenizer.from_pretrained(DistilGPT2_MODEL_ID)
+        return model, tokenizer
     except Exception as e:
-        st.error(f"❌ Error loading model: {str(e)}")
-        return None
+        st.error(f"Failed to load GPT-2 model from Hugging Face Hub. Error: {e}")
+        return None, None
 
-# ============================================================================
-# CALLBACK FUNCTIONS FOR SYNCING SLIDERS AND NUMBER INPUTS
-# ============================================================================
-def sync_satisfaction_slider():
-    """Sync satisfaction level from slider to session state"""
-    st.session_state.satisfaction_level = st.session_state.sat_slider
+@st.cache_resource(show_spinner=False)
+def load_classifier_model():
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(CLASSIFIER_ID)
+        model = AutoModelForSequenceClassification.from_pretrained(CLASSIFIER_ID)
+        return model, tokenizer
+    except Exception as e:
+        st.error(f"Failed to load classifier model from Hugging Face Hub. Error: {e}")
+        return None, None
 
-def sync_satisfaction_input():
-    """Sync satisfaction level from number input to session state"""
-    st.session_state.satisfaction_level = st.session_state.sat_input
+def is_ood(query: str, model, tokenizer):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    model.eval()
+    inputs = tokenizer(query, return_tensors="pt", truncation=True, padding=True, max_length=256)
+    inputs = {k: v.to(device) for k, v in inputs.items()}
+    with torch.no_grad():
+        outputs = model(**inputs)
+    pred_id = torch.argmax(outputs.logits, dim=1).item()
+    return pred_id == 1  # True if OOD (label 1)
 
-def sync_evaluation_slider():
-    """Sync evaluation from slider to session state"""
-    st.session_state.last_evaluation = st.session_state.eval_slider
+# =============================
+# ORIGINAL HELPER FUNCTIONS
+# =============================
 
-def sync_evaluation_input():
-    """Sync evaluation from number input to session state"""
-    st.session_state.last_evaluation = st.session_state.eval_input
+static_placeholders = {
+    "{{WEBSITE_URL}}": "[website](https://github.com/MarpakaPradeepSai)",
+    "{{SUPPORT_TEAM_LINK}}": "[support team](https://github.com/MarpakaPradeepSai)",
+    "{{CONTACT_SUPPORT_LINK}}" : "[support team](https://github.com/MarpakaPradeepSai)",
+    "{{SUPPORT_CONTACT_LINK}}" : "[support team](https://github.com/MarpakaPradeepSai)",
+    "{{CANCEL_TICKET_SECTION}}": "<b>Ticket Cancellation</b>",
+    "{{CANCEL_TICKET_OPTION}}": "<b>Cancel Ticket</b>",
+    "{{GET_REFUND_OPTION}}": "<b>Get Refund</b>",
+    "{{UPGRADE_TICKET_INFORMATION}}": "<b>Upgrade Ticket Information</b>",
+    "{{TICKET_SECTION}}": "<b>Ticketing</b>",
+    "{{CANCELLATION_POLICY_SECTION}}": "<b>Cancellation Policy</b>",
+    "{{CHECK_CANCELLATION_POLICY_OPTION}}": "<b>Check Cancellation Policy</b>",
+    "{{APP}}": "<b>App</b>",
+    "{{CHECK_CANCELLATION_FEE_OPTION}}": "<b>Check Cancellation Fee</b>",
+    "{{CHECK_REFUND_POLICY_OPTION}}": "<b>Check Refund Policy</b>",
+    "{{CHECK_PRIVACY_POLICY_OPTION}}": "<b>Check Privacy Policy</b>",
+    "{{SAVE_BUTTON}}": "<b>Save</b>",
+    "{{EDIT_BUTTON}}": "<b>Edit</b>",
+    "{{CANCELLATION_FEE_SECTION}}": "<b>Cancellation Fee</b>",
+    "{{CHECK_CANCELLATION_FEE_INFORMATION}}": "<b>Check Cancellation Fee Information</b>",
+    "{{PRIVACY_POLICY_LINK}}": "<b>Privacy Policy</b>",
+    "{{REFUND_SECTION}}": "<b>Refund</b>",
+    "{{REFUND_POLICY_LINK}}": "<b>Refund Policy</b>",
+    "{{CUSTOMER_SERVICE_SECTION}}": "<b>Customer Service</b>",
+    "{{DELIVERY_PERIOD_INFORMATION}}": "<b>Delivery Period</b>",
+    "{{EVENT_ORGANIZER_OPTION}}": "<b>Event Organizer</b>",
+    "{{FIND_TICKET_OPTION}}": "<b>Find Ticket</b>",
+    "{{FIND_UPCOMING_EVENTS_OPTION}}": "<b>Find Upcoming Events</b>",
+    "{{CONTACT_SECTION}}": "<b>Contact</b>",
+    "{{SEARCH_BUTTON}}": "<b>Search</b>",
+    "{{SUPPORT_SECTION}}": "<b>Support</b>",
+    "{{EVENTS_SECTION}}": "<b>Events</b>",
+    "{{EVENTS_PAGE}}": "<b>Events</b>",
+    "{{TYPE_EVENTS_OPTION}}": "<b>Type Events</b>",
+    "{{PAYMENT_SECTION}}": "<b>Payment</b>",
+    "{{PAYMENT_OPTION}}": "<b>Payment</b>",
+    "{{CANCELLATION_SECTION}}": "<b>Cancellation</b>",
+    "{{CANCELLATION_OPTION}}": "<b>Cancellation</b>",
+    "{{REFUND_OPTION}}": "<b>Refund</b>",
+    "{{TRANSFER_TICKET_OPTION}}": "<b>Transfer Ticket</b>",
+    "{{REFUND_STATUS_OPTION}}": "<b>Refund Status</b>",
+    "{{DELIVERY_SECTION}}": "<b>Delivery</b>",
+    "{{SELL_TICKET_OPTION}}": "<b>Sell Ticket</b>",
+    "{{CANCELLATION_FEE_INFORMATION}}": "<b>Cancellation Fee Information</b>",
+    "{{CUSTOMER_SUPPORT_PAGE}}": "<b>Customer Support</b>",
+    "{{PAYMENT_METHOD}}" : "<b>Payment</b>",
+    "{{VIEW_PAYMENT_METHODS}}": "<b>View Payment Methods</b>",
+    "{{VIEW_CANCELLATION_POLICY}}": "<b>View Cancellation Policy</b>",
+    "{{SUPPORT_ SECTION}}" : "<b>Support</b>",
+    "{{CUSTOMER_SUPPORT_SECTION}}" : "<b>Customer Support</b>",
+    "{{HELP_SECTION}}" : "<b>Help</b>",
+    "{{TICKET_INFORMATION}}" : "<b>Ticket Information</b>",
+    "{{UPGRADE_TICKET_BUTTON}}" : "<b>Upgrade Ticket</b>",
+    "{{CANCEL_TICKET_BUTTON}}" : "<b>Cancel Ticket</b>",
+    "{{GET_REFUND_BUTTON}}" : "<b>Get Refund</b>",
+    "{{PAYMENTS_HELP_SECTION}}" : "<b>Payments Help</b>",
+    "{{PAYMENTS_PAGE}}" : "<b>Payments</b>",
+    "{{TICKET_DETAILS}}" : "<b>Ticket Details</b>",
+    "{{TICKET_INFORMATION_PAGE}}" : "<b>Ticket Information</b>",
+    "{{REPORT_PAYMENT_PROBLEM}}" : "<b>Report Payment</b>",
+    "{{TICKET_OPTIONS}}" : "<b>Ticket Options</b>",
+    "{{SEND_BUTTON}}" : "<b>Send</b>",
+    "{{PAYMENT_ISSUE_OPTION}}" : "<b>Payment Issue</b>",
+    "{{CUSTOMER_SUPPORT_PORTAL}}" : "<b>Customer Support</b>",
+    "{{UPGRADE_TICKET_OPTION}}" : "<b>Upgrade Ticket</b>",
+    "{{TICKET_AVAILABILITY_TAB}}" : "<b>Ticket Availability</b>",
+    "{{TRANSFER_TICKET_BUTTON}}" : "<b>Transfer Ticket</b>",
+    "{{TICKET_MANAGEMENT}}" : "<b>Ticket Management</b>",
+    "{{TICKET_STATUS_TAB}}" : "<b>Ticket Status</b>",
+    "{{TICKETING_PAGE}}" : "<b>Ticketing</b>",
+    "{{TICKET_TRANSFER_TAB}}" : "<b>Ticket Transfer</b>",
+    "{{CURRENT_TICKET_DETAILS}}" : "<b>Current Ticket Details</b>",
+    "{{UPGRADE_OPTION}}" : "<b>Upgrade</b>",
+    "{{CONNECT_WITH_ORGANIZER}}" : "<b>Connect with Organizer</b>",
+    "{{TICKETS_TAB}}" : "<b>Tickets</b>",
+    "{{ASSISTANCE_SECTION}}" : "<b>Assistance Section</b>",
+}
 
-# ============================================================================
-# MAIN APPLICATION
-# ============================================================================
-def main():
-    # Header
-    st.markdown('<h1 class="main-header">👥 Employee Turnover Prediction</h1>', unsafe_allow_html=True)
-    st.markdown('<p class="sub-header">Predict whether an employee is likely to leave the company</p>', unsafe_allow_html=True)
-    
-    # Load model silently
-    model = load_model_from_huggingface()
-    
-    if model is None:
-        st.error("❌ Failed to load model. Please check the Hugging Face repository.")
-        st.info(f"Repository: https://huggingface.co/{HF_REPO_ID}")
-        return
-    
-    # ========================================================================
-    # MAIN INPUT SECTION
-    # ========================================================================
-    st.markdown("---")
-    st.markdown('<h2 class="section-header">📝 Enter Employee Information</h2>', unsafe_allow_html=True)
-    
-    # Initialize session state for syncing slider and number input
-    if 'satisfaction_level' not in st.session_state:
-        st.session_state.satisfaction_level = 0.5
-    if 'last_evaluation' not in st.session_state:
-        st.session_state.last_evaluation = 0.7
-    
-    # ========================================================================
-    # ROW 1: Satisfaction Level & Last Evaluation (side by side with feature cards)
-    # ========================================================================
-    with st.container():
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("""
-            <div class="feature-card">
-                <span style="font-size: 1.2rem;">😊 <strong>Satisfaction Level</strong></span>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            sat_col1, sat_col2 = st.columns([3, 1])
-            with sat_col1:
-                st.slider(
-                    "Satisfaction Slider",
-                    min_value=0.0,
-                    max_value=1.0,
-                    value=st.session_state.satisfaction_level,
-                    step=0.01,
-                    help="Employee satisfaction level (0 = Very Dissatisfied, 1 = Very Satisfied)",
-                    label_visibility="collapsed",
-                    key="sat_slider",
-                    on_change=sync_satisfaction_slider
-                )
-            with sat_col2:
-                st.number_input(
-                    "Satisfaction Input",
-                    min_value=0.0,
-                    max_value=1.0,
-                    value=st.session_state.satisfaction_level,
-                    step=0.01,
-                    format="%.2f",
-                    label_visibility="collapsed",
-                    key="sat_input",
-                    on_change=sync_satisfaction_input
-                )
-            
-            satisfaction_level = st.session_state.satisfaction_level
-        
-        with col2:
-            st.markdown("""
-            <div class="feature-card">
-                <span style="font-size: 1.2rem;">📊 <strong>Last Evaluation</strong></span>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            eval_col1, eval_col2 = st.columns([3, 1])
-            with eval_col1:
-                st.slider(
-                    "Evaluation Slider",
-                    min_value=0.0,
-                    max_value=1.0,
-                    value=st.session_state.last_evaluation,
-                    step=0.01,
-                    help="Last performance evaluation score (0 = Poor, 1 = Excellent)",
-                    label_visibility="collapsed",
-                    key="eval_slider",
-                    on_change=sync_evaluation_slider
-                )
-            with eval_col2:
-                st.number_input(
-                    "Evaluation Input",
-                    min_value=0.0,
-                    max_value=1.0,
-                    value=st.session_state.last_evaluation,
-                    step=0.01,
-                    format="%.2f",
-                    label_visibility="collapsed",
-                    key="eval_input",
-                    on_change=sync_evaluation_input
-                )
-            
-            last_evaluation = st.session_state.last_evaluation
-        
-        # ========================================================================
-        # ROW 2: Years at Company, Number of Projects, Average Monthly Hours (3 columns)
-        # ========================================================================
-        col3, col4, col5 = st.columns(3)
-        
-        with col3:
-            st.markdown("""
-            <div class="feature-card">
-                <span style="font-size: 1.2rem;">📅 <strong>Years at Company</strong></span>
-            </div>
-            """, unsafe_allow_html=True)
-            time_spend_company = st.number_input(
-                "Years",
-                min_value=1,
-                max_value=40,
-                value=3,
-                step=1,
-                label_visibility="collapsed",
-                help="Number of years the employee has worked at the company"
-            )
-        
-        with col4:
-            st.markdown("""
-            <div class="feature-card">
-                <span style="font-size: 1.2rem;">📁 <strong>Number of Projects</strong></span>
-            </div>
-            """, unsafe_allow_html=True)
-            number_project = st.number_input(
-                "Projects",
-                min_value=1,
-                max_value=10,
-                value=4,
-                step=1,
-                label_visibility="collapsed",
-                help="Number of projects the employee is currently working on"
-            )
-        
-        with col5:
-            st.markdown("""
-            <div class="feature-card">
-                <span style="font-size: 1.2rem;">⏰ <strong>Avg. Monthly Hours</strong></span>
-            </div>
-            """, unsafe_allow_html=True)
-            average_monthly_hours = st.number_input(
-                "Hours",
-                min_value=80,
-                max_value=350,
-                value=200,
-                step=5,
-                label_visibility="collapsed",
-                help="Average number of hours worked per month"
-            )
-    
-    # Create input dictionary
-    input_data = {
-        'satisfaction_level': satisfaction_level,
-        'time_spend_company': time_spend_company,
-        'average_monthly_hours': average_monthly_hours,
-        'number_project': number_project,
-        'last_evaluation': last_evaluation
-    }
-    
-    # ========================================================================
-    # PREDICTION BUTTON
-    # ========================================================================
-    st.markdown("---")
-    
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        predict_button = st.button("🔮 Predict Employee Turnover", use_container_width=True)
-    
-    # ========================================================================
-    # PREDICTION RESULTS
-    # ========================================================================
-    if predict_button:
-        # Create input DataFrame with correct feature order
-        input_df = pd.DataFrame([input_data])[BEST_FEATURES]
-        
-        # Make prediction
-        prediction = model.predict(input_df)[0]
-        prediction_proba = model.predict_proba(input_df)[0]
-        
-        prob_stay = prediction_proba[0] * 100
-        prob_leave = prediction_proba[1] * 100
-        
-        st.markdown("---")
-        st.subheader("🎯 Prediction Results")
-        
-        # Results in two columns
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            if prediction == 0:
-                st.markdown("""
-                <div class="prediction-box stay-prediction">
-                    <h1>✅ STAY</h1>
-                    <p style="font-size: 1.3rem; margin-top: 1rem;">
-                        Employee is likely to <strong>STAY</strong> with the company
-                    </p>
-                </div>
-                """, unsafe_allow_html=True)
+def replace_placeholders(response, dynamic_placeholders, static_placeholders):
+    for placeholder, value in static_placeholders.items():
+        response = response.replace(placeholder, value)
+    for placeholder, value in dynamic_placeholders.items():
+        response = response.replace(placeholder, value)
+    return response
+
+def extract_dynamic_placeholders(user_question, nlp):
+    doc = nlp(user_question)
+    dynamic_placeholders = {}
+    for ent in doc.ents:
+        if ent.label_ == "EVENT":
+            event_text = ent.text.title()
+            dynamic_placeholders['{{EVENT}}'] = f"<b>{event_text}</b>"
+        elif ent.label_ == "GPE":
+            city_text = ent.text.title()
+            dynamic_placeholders['{{CITY}}'] = f"<b>{city_text}</b>"
+    if '{{EVENT}}' not in dynamic_placeholders:
+        dynamic_placeholders['{{EVENT}}'] = "event"
+    if '{{CITY}}' not in dynamic_placeholders:
+        dynamic_placeholders['{{CITY}}'] = "city"
+    return dynamic_placeholders
+
+def generate_response(model, tokenizer, instruction, max_length=256):
+    model.eval()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    input_text = f"Instruction: {instruction} Response:"
+    inputs = tokenizer(input_text, return_tensors="pt", padding=True).to(device)
+    with torch.no_grad():
+        outputs = model.generate(
+            input_ids=inputs["input_ids"],
+            attention_mask=inputs["attention_mask"],
+            max_length=max_length,
+            num_return_sequences=1,
+            temperature=0.4,
+            top_p=0.95,
+            do_sample=True,
+            pad_token_id=tokenizer.eos_token_id
+        )
+    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    response_start = response.find("Response:") + len("Response:")
+    return response[response_start:].strip()
+
+# =============================
+# CSS AND UI SETUP
+# =============================
+
+st.markdown(
+    """
+<style>
+.stButton>button { background: linear-gradient(90deg, #ff8a00, #e52e71); color: white !important; border: none; border-radius: 25px; padding: 10px 20px; font-size: 1.2em; font-weight: bold; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; display: inline-flex; align-items: center; justify-content: center; margin-top: 5px; width: auto; min-width: 100px; font-family: 'Times New Roman', Times, serif !important; }
+.stButton>button:hover { transform: scale(1.05); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3); color: white !important; }
+.stButton>button:active { transform: scale(0.98); }
+* { font-family: 'Times New Roman', Times, serif !important; }
+div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button:nth-of-type(1) { background: linear-gradient(90deg, #29ABE2, #0077B6); color: white !important; }
+.horizontal-line { border-top: 2px solid #e0e0e0; margin: 15px 0; }
+div[data-testid="stChatInput"] { box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); border-radius: 5px; padding: 10px; margin: 10px 0; }
+
+.footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background: var(--streamlit-background-color);
+    color: gray;
+    text-align: center;
+    padding: 5px 0;
+    font-size: 13px;
+    z-index: 9999;
+}
+.main { padding-bottom: 40px; }
+</style>
+    """, unsafe_allow_html=True
+)
+
+st.markdown(
+    """
+    <div class="footer">
+        This is not a conversational AI. It is designed solely for <b>event ticketing</b> queries. Responses outside this scope may be inaccurate.
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+st.markdown("<h1 style='font-size: 43px;'>Advanced Event Ticketing Chatbot</h1>", unsafe_allow_html=True)
+
+# --- FIX: Initialize state variables for managing generation process ---
+if "models_loaded" not in st.session_state:
+    st.session_state.models_loaded = False
+if "generating" not in st.session_state:
+    st.session_state.generating = False # This will track if a response is being generated
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+
+example_queries = [
+    "How do I buy a ticket?", "How can I upgrade my ticket for the upcoming event in Hyderabad?",
+    "How do I change my personal details on my ticket?", "How can I find details about upcoming events?",
+    "How do I contact customer service?", "How do I get a refund?", "What is the ticket cancellation fee?",
+    "How can I track my ticket cancellation status?", "How can I sell my ticket?"
+]
+
+if not st.session_state.models_loaded:
+    with st.spinner("Loading models and resources... Please wait..."):
+        try:
+            nlp = load_spacy_model()
+            gpt2_model, gpt2_tokenizer = load_gpt2_model_and_tokenizer()
+            clf_model, clf_tokenizer = load_classifier_model()
+
+            if all([nlp, gpt2_model, gpt2_tokenizer, clf_model, clf_tokenizer]):
+                st.session_state.models_loaded = True
+                st.session_state.nlp = nlp
+                st.session_state.model = gpt2_model
+                st.session_state.tokenizer = gpt2_tokenizer
+                st.session_state.clf_model = clf_model
+                st.session_state.clf_tokenizer = clf_tokenizer
+                st.rerun()
             else:
-                st.markdown("""
-                <div class="prediction-box leave-prediction">
-                    <h1>⚠️ LEAVE</h1>
-                    <p style="font-size: 1.3rem; margin-top: 1rem;">
-                        Employee is likely to <strong>LEAVE</strong> the company
-                    </p>
-                </div>
-                """, unsafe_allow_html=True)
-        
-        with col2:
-            st.markdown("### 📊 Prediction Probabilities")
-            
-            # Stay probability with GREEN bar
-            st.write(f"**Probability of Staying:** {prob_stay:.1f}%")
-            st.markdown(f"""
-            <div class="progress-bar-container">
-                <div class="progress-bar-green" style="width: {prob_stay}%;"></div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Leave probability with RED bar
-            st.write(f"**Probability of Leaving:** {prob_leave:.1f}%")
-            st.markdown(f"""
-            <div class="progress-bar-container">
-                <div class="progress-bar-red" style="width: {prob_leave}%;"></div>
-            </div>
-            """, unsafe_allow_html=True)
+                st.error("Failed to load one or more models. Please refresh the page.")
+        except Exception as e:
+            st.error(f"Error loading models: {str(e)}")
 
-# ============================================================================
-# RUN APPLICATION
-# ============================================================================
-if __name__ == "__main__":
-    main()
+# ==================================
+# MAIN CHAT INTERFACE
+# ==================================
+
+if st.session_state.models_loaded:
+    st.write("Ask me about ticket bookings, cancellations, refunds, or any event-related inquiries!")
+
+    # --- FIX: Disable input widgets while generating a response ---
+    selected_query = st.selectbox(
+        "Choose a query from examples:", ["Choose your question"] + example_queries,
+        key="query_selectbox", label_visibility="collapsed",
+        disabled=st.session_state.generating
+    )
+    process_query_button = st.button(
+        "Ask this question", key="query_button",
+        disabled=st.session_state.generating
+    )
+
+    nlp = st.session_state.nlp
+    model = st.session_state.model
+    tokenizer = st.session_state.tokenizer
+    clf_model = st.session_state.clf_model
+    clf_tokenizer = st.session_state.clf_tokenizer
+
+    last_role = None
+
+    for message in st.session_state.chat_history:
+        if message["role"] == "user" and last_role == "assistant":
+            st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
+        with st.chat_message(message["role"], avatar=message["avatar"]):
+            st.markdown(message["content"], unsafe_allow_html=True)
+        last_role = message["role"]
+
+    # --- REFACTORED: Create a unified function to handle prompt processing ---
+    def handle_prompt(prompt_text):
+        if not prompt_text or not prompt_text.strip():
+            st.toast("⚠️ Please enter or select a question.")
+            return
+
+        # --- FIX: Set generating state to True to lock the UI ---
+        st.session_state.generating = True
+
+        prompt_text = prompt_text[0].upper() + prompt_text[1:]
+        st.session_state.chat_history.append({"role": "user", "content": prompt_text, "avatar": "👤"})
+
+        # Rerun to display the user's message and disable inputs immediately
+        st.rerun()
+
+
+    def process_generation():
+        # This function runs only after the UI is locked and the user message is shown
+        last_message = st.session_state.chat_history[-1]["content"]
+
+        with st.chat_message("assistant", avatar="🤖"):
+            message_placeholder = st.empty()
+            full_response = ""
+
+            if is_ood(last_message, clf_model, clf_tokenizer):
+                full_response = random.choice(fallback_responses)
+            else:
+                with st.spinner("Generating response..."):
+                    dynamic_placeholders = extract_dynamic_placeholders(last_message, nlp)
+                    response_gpt = generate_response(model, tokenizer, last_message)
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
+
+            streamed_text = ""
+            for word in full_response.split(" "):
+                streamed_text += word + " "
+                message_placeholder.markdown(streamed_text + "⬤", unsafe_allow_html=True)
+                time.sleep(0.05)
+            message_placeholder.markdown(full_response, unsafe_allow_html=True)
+
+        st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
+        # --- FIX: Set generating state to False to unlock UI ---
+        st.session_state.generating = False
+
+
+    # --- LOGIC FLOW ---
+    # 1. Handle triggers (button click or chat input)
+    if process_query_button:
+        if selected_query != "Choose your question":
+            handle_prompt(selected_query)
+        else:
+            st.error("⚠️ Please select your question from the dropdown.")
+
+    if prompt := st.chat_input("Enter your own question:", disabled=st.session_state.generating):
+        handle_prompt(prompt)
+
+    # 2. If UI is locked, it means we need to generate a response
+    if st.session_state.generating:
+        process_generation()
+        # After generation, rerun to update the UI with the final response and re-enable inputs
+        st.rerun()
+
+
+    # The clear button should also be disabled during generation
+    if st.session_state.chat_history:
+        if st.button("Clear Chat", key="reset_button", disabled=st.session_state.generating):
+            st.session_state.chat_history = []
+            st.session_state.generating = False # Ensure state is reset
+            last_role = None
+            st.rerun()
