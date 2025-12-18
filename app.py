@@ -223,12 +223,10 @@ def generate_response(model, tokenizer, instruction, max_length=256):
 st.markdown(
     """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Tiempos+Text:wght@400;600&display=swap');
-
-.stButton>button { background: linear-gradient(90deg, #ff8a00, #e52e71); color: white !important; border: none; border-radius: 25px; padding: 10px 20px; font-size: 1.2em; font-weight: bold; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; display: inline-flex; align-items: center; justify-content: center; margin-top: 5px; width: auto; min-width: 100px; font-family: 'Tiempos Text', serif !important; }
+.stButton>button { background: linear-gradient(90deg, #ff8a00, #e52e71); color: white !important; border: none; border-radius: 25px; padding: 10px 20px; font-size: 1.2em; font-weight: bold; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; display: inline-flex; align-items: center; justify-content: center; margin-top: 5px; width: auto; min-width: 100px; font-family: 'Tiempos', serif !important; }
 .stButton>button:hover { transform: scale(1.05); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3); color: white !important; }
 .stButton>button:active { transform: scale(0.98); }
-* { font-family: 'Tiempos Text', serif !important; }
+* { font-family: 'Tiempos', serif !important; }
 div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button:nth-of-type(1) { background: linear-gradient(90deg, #29ABE2, #0077B6); color: white !important; }
 .horizontal-line { border-top: 2px solid #e0e0e0; margin: 15px 0; }
 div[data-testid="stChatInput"] { box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); border-radius: 5px; padding: 10px; margin: 10px 0; }
@@ -244,7 +242,6 @@ div[data-testid="stChatInput"] { box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); borde
     padding: 5px 0;
     font-size: 13px;
     z-index: 9999;
-    font-family: 'Tiempos Text', serif !important;
 }
 .main { padding-bottom: 40px; }
 </style>
@@ -260,7 +257,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.markdown("<h1 style='font-size: 43px; font-family: \"Tiempos Text\", serif;'>Advanced Event Ticketing Chatbot</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='font-size: 43px;'>Advanced Event Ticketing Chatbot</h1>", unsafe_allow_html=True)
 
 # --- FIX: Initialize state variables for managing generation process ---
 if "models_loaded" not in st.session_state:
