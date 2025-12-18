@@ -9,6 +9,16 @@ import time
 import random
 
 # =============================
+# PAGE CONFIGURATION
+# =============================
+st.set_page_config(
+    page_title="EventGenie AI",
+    page_icon="🎫",
+    layout="centered",
+    initial_sidebar_state="expanded"
+)
+
+# =============================
 # MODEL AND CONFIGURATION SETUP
 # =============================
 
@@ -217,55 +227,158 @@ def generate_response(model, tokenizer, instruction, max_length=256):
     return response[response_start:].strip()
 
 # =============================
-# CSS AND UI SETUP
+# CSS AND UI SETUP (EXTREMELY INTERACTIVE)
 # =============================
 
 st.markdown(
     """
-<style>
-.stButton>button { background: linear-gradient(90deg, #ff8a00, #e52e71); color: white !important; border: none; border-radius: 25px; padding: 10px 20px; font-size: 1.2em; font-weight: bold; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; display: inline-flex; align-items: center; justify-content: center; margin-top: 5px; width: auto; min-width: 100px; font-family: 'Times New Roman', Times, serif !important; }
-.stButton>button:hover { transform: scale(1.05); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3); color: white !important; }
-.stButton>button:active { transform: scale(0.98); }
-* { font-family: 'Times New Roman', Times, serif !important; }
-div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button:nth-of-type(1) { background: linear-gradient(90deg, #29ABE2, #0077B6); color: white !important; }
-.horizontal-line { border-top: 2px solid #e0e0e0; margin: 15px 0; }
-div[data-testid="stChatInput"] { box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); border-radius: 5px; padding: 10px; margin: 10px 0; }
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* General Font and Body */
+        html, body, [class*="css"] {
+            font-family: 'Poppins', sans-serif !important;
+        }
+        
+        /* Main Container Background */
+        .stApp {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
 
-.footer {
-    position: fixed;
-    left: 0;
-    bottom: 0;
-    width: 100%;
-    background: var(--streamlit-background-color);
-    color: gray;
-    text-align: center;
-    padding: 5px 0;
-    font-size: 13px;
-    z-index: 9999;
-}
-.main { padding-bottom: 40px; }
-</style>
+        /* Custom Title Styling */
+        .title-container {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            margin-bottom: 30px;
+        }
+        .title-text {
+            font-size: 3em;
+            font-weight: 700;
+            background: -webkit-linear-gradient(45deg, #0077B6, #e52e71);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle-text {
+            color: #555;
+            font-size: 1.1em;
+            margin-top: -10px;
+        }
+
+        /* Interactive Buttons */
+        .stButton>button {
+            background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
+            color: white !important;
+            border: none;
+            border-radius: 50px;
+            padding: 12px 28px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease-in-out;
+            width: 100%;
+        }
+        .stButton>button:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            background: linear-gradient(90deg, #182848 0%, #4b6cb7 100%);
+        }
+        
+        /* Secondary Button (Clear Chat) */
+        div[data-testid="stSidebar"] .stButton>button {
+            background: linear-gradient(90deg, #ff416c, #ff4b2b);
+        }
+
+        /* Chat Input Styling */
+        div[data-testid="stChatInput"] {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+            border: 2px solid #e0e0e0;
+        }
+
+        /* Message Bubbles Animation */
+        .element-container {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Horizontal Line */
+        .horizontal-line {
+            height: 2px;
+            background: linear-gradient(to right, transparent, #ccc, transparent);
+            margin: 25px 0;
+        }
+
+        /* Footer */
+        .footer {
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            color: #666;
+            text-align: center;
+            padding: 10px 0;
+            font-size: 12px;
+            z-index: 9999;
+            border-top: 1px solid #eaeaea;
+            backdrop-filter: blur(5px);
+        }
+        .main { padding-bottom: 60px; }
+        
+        /* Expander Styling */
+        .streamlit-expanderHeader {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            font-weight: 600;
+            color: #333;
+        }
+    </style>
     """, unsafe_allow_html=True
 )
 
 st.markdown(
     """
     <div class="footer">
-        This is not a conversational AI. It is designed solely for <b>event ticketing</b> queries. Responses outside this scope may be inaccurate.
+        🔒 Designed solely for <b>event ticketing</b> queries. Responses outside this scope may be inaccurate.
     </div>
     """,
     unsafe_allow_html=True
 )
 
-st.markdown("<h1 style='font-size: 43px;'>Advanced Event Ticketing Chatbot</h1>", unsafe_allow_html=True)
+# =============================
+# HEADER SECTION
+# =============================
+st.markdown(
+    """
+    <div class="title-container">
+        <div class="title-text">EventGenie AI</div>
+        <div class="subtitle-text">Your Intelligent Ticketing Assistant</div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
-# --- FIX: Initialize state variables for managing generation process ---
+# --- INITIALIZE STATE VARIABLES ---
 if "models_loaded" not in st.session_state:
     st.session_state.models_loaded = False
 if "generating" not in st.session_state:
-    st.session_state.generating = False # This will track if a response is being generated
+    st.session_state.generating = False 
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
+    # Add a welcome message to history if empty
+    st.session_state.chat_history.append({
+        "role": "assistant",
+        "content": "👋 **Hello!** I'm here to help with your tickets, events, and refunds. How can I assist you today?",
+        "avatar": "🤖"
+    })
 
 example_queries = [
     "How do I buy a ticket?", "How can I upgrade my ticket for the upcoming event in Hyderabad?",
@@ -274,12 +387,23 @@ example_queries = [
     "How can I track my ticket cancellation status?", "How can I sell my ticket?"
 ]
 
+# =============================
+# LOADING SCREEN
+# =============================
 if not st.session_state.models_loaded:
-    with st.spinner("Loading models and resources... Please wait..."):
+    with st.container():
+        st.info("🚀 Initializing AI Core...")
+        progress_bar = st.progress(0)
+        
         try:
             nlp = load_spacy_model()
+            progress_bar.progress(30)
+            
             gpt2_model, gpt2_tokenizer = load_gpt2_model_and_tokenizer()
+            progress_bar.progress(70)
+            
             clf_model, clf_tokenizer = load_classifier_model()
+            progress_bar.progress(100)
 
             if all([nlp, gpt2_model, gpt2_tokenizer, clf_model, clf_tokenizer]):
                 st.session_state.models_loaded = True
@@ -288,6 +412,7 @@ if not st.session_state.models_loaded:
                 st.session_state.tokenizer = gpt2_tokenizer
                 st.session_state.clf_model = clf_model
                 st.session_state.clf_tokenizer = clf_tokenizer
+                time.sleep(0.5) # Aesthetic pause
                 st.rerun()
             else:
                 st.error("Failed to load one or more models. Please refresh the page.")
@@ -299,19 +424,47 @@ if not st.session_state.models_loaded:
 # ==================================
 
 if st.session_state.models_loaded:
-    st.write("Ask me about ticket bookings, cancellations, refunds, or any event-related inquiries!")
+    
+    # --- SIDEBAR CONTROLS ---
+    with st.sidebar:
+        st.markdown("### ⚙️ Control Panel")
+        st.markdown("Use this panel to manage your session.")
+        
+        # Clear chat button in sidebar
+        if st.button("🗑️ Clear Conversation", key="reset_button", disabled=st.session_state.generating):
+            st.session_state.chat_history = []
+            st.session_state.chat_history.append({
+                "role": "assistant",
+                "content": "👋 **Hello!** I'm here to help with your tickets, events, and refunds. How can I assist you today?",
+                "avatar": "🤖"
+            })
+            st.session_state.generating = False
+            st.toast("Conversation cleared!", icon="🧹")
+            st.rerun()
+            
+        st.markdown("---")
+        st.markdown("### ℹ️ About")
+        st.info(
+            "This AI uses a fine-tuned **DistilGPT2** model for generation and **DistilBERT** for query classification."
+        )
 
-    # --- FIX: Disable input widgets while generating a response ---
-    selected_query = st.selectbox(
-        "Choose a query from examples:", ["Choose your question"] + example_queries,
-        key="query_selectbox", label_visibility="collapsed",
-        disabled=st.session_state.generating
-    )
-    process_query_button = st.button(
-        "Ask this question", key="query_button",
-        disabled=st.session_state.generating
-    )
+    # --- QUICK QUESTIONS SECTION ---
+    with st.expander("📝 **Quick Questions (Click to Expand)**", expanded=False):
+        st.markdown("Don't know what to ask? Try one of these:")
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            selected_query = st.selectbox(
+                "Select a query:", ["Choose a question..."] + example_queries,
+                key="query_selectbox", label_visibility="collapsed",
+                disabled=st.session_state.generating
+            )
+        with col2:
+            process_query_button = st.button(
+                "Ask ➡️", key="query_button",
+                disabled=st.session_state.generating
+            )
 
+    # --- CHAT HISTORY DISPLAY ---
     nlp = st.session_state.nlp
     model = st.session_state.model
     tokenizer = st.session_state.tokenizer
@@ -321,78 +474,73 @@ if st.session_state.models_loaded:
     last_role = None
 
     for message in st.session_state.chat_history:
+        # Visual separator between turns, except for the very first welcome message
         if message["role"] == "user" and last_role == "assistant":
-            st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
+             st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
+             
         with st.chat_message(message["role"], avatar=message["avatar"]):
             st.markdown(message["content"], unsafe_allow_html=True)
         last_role = message["role"]
 
-    # --- REFACTORED: Create a unified function to handle prompt processing ---
+    # --- FUNCTION: Handle Prompt ---
     def handle_prompt(prompt_text):
-        if not prompt_text or not prompt_text.strip():
-            st.toast("⚠️ Please enter or select a question.")
+        if not prompt_text or not prompt_text.strip() or prompt_text == "Choose a question...":
+            st.toast("⚠️ Please enter or select a valid question.", icon="🚫")
             return
 
-        # --- FIX: Set generating state to True to lock the UI ---
         st.session_state.generating = True
-
+        
+        # Format input
         prompt_text = prompt_text[0].upper() + prompt_text[1:]
         st.session_state.chat_history.append({"role": "user", "content": prompt_text, "avatar": "👤"})
-
-        # Rerun to display the user's message and disable inputs immediately
+        
         st.rerun()
 
-
+    # --- FUNCTION: Process Generation ---
     def process_generation():
-        # This function runs only after the UI is locked and the user message is shown
         last_message = st.session_state.chat_history[-1]["content"]
 
         with st.chat_message("assistant", avatar="🤖"):
             message_placeholder = st.empty()
             full_response = ""
 
-            if is_ood(last_message, clf_model, clf_tokenizer):
-                full_response = random.choice(fallback_responses)
-            else:
-                with st.spinner("Generating response..."):
+            # Visual "Thinking" indicator
+            with st.status("Thinking...", expanded=True) as status:
+                st.write("Analyzing your request...")
+                time.sleep(0.5) # UX pause
+                
+                if is_ood(last_message, clf_model, clf_tokenizer):
+                    status.update(label="Topic outside scope", state="error", expanded=False)
+                    full_response = random.choice(fallback_responses)
+                else:
+                    status.update(label="Drafting response", state="running", expanded=False)
                     dynamic_placeholders = extract_dynamic_placeholders(last_message, nlp)
                     response_gpt = generate_response(model, tokenizer, last_message)
                     full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
+                    status.update(label="Complete!", state="complete", expanded=False)
 
+            # Typewriter effect
             streamed_text = ""
             for word in full_response.split(" "):
                 streamed_text += word + " "
                 message_placeholder.markdown(streamed_text + "⬤", unsafe_allow_html=True)
-                time.sleep(0.05)
+                time.sleep(0.04) # Slightly faster for better feel
             message_placeholder.markdown(full_response, unsafe_allow_html=True)
 
         st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
-        # --- FIX: Set generating state to False to unlock UI ---
         st.session_state.generating = False
 
-
     # --- LOGIC FLOW ---
-    # 1. Handle triggers (button click or chat input)
+    
+    # 1. Handle Example Trigger
     if process_query_button:
-        if selected_query != "Choose your question":
-            handle_prompt(selected_query)
-        else:
-            st.error("⚠️ Please select your question from the dropdown.")
+        handle_prompt(selected_query)
 
-    if prompt := st.chat_input("Enter your own question:", disabled=st.session_state.generating):
+    # 2. Handle Chat Input
+    if prompt := st.chat_input("Type your question here...", disabled=st.session_state.generating):
         handle_prompt(prompt)
 
-    # 2. If UI is locked, it means we need to generate a response
+    # 3. Generate if locked
     if st.session_state.generating:
         process_generation()
-        # After generation, rerun to update the UI with the final response and re-enable inputs
         st.rerun()
-
-
-    # The clear button should also be disabled during generation
-    if st.session_state.chat_history:
-        if st.button("Clear Chat", key="reset_button", disabled=st.session_state.generating):
-            st.session_state.chat_history = []
-            st.session_state.generating = False # Ensure state is reset
-            last_role = None
-            st.rerun()
