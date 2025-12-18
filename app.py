@@ -223,13 +223,32 @@ def generate_response(model, tokenizer, instruction, max_length=256):
 st.markdown(
     """
 <style>
-/* Font change to Tiempos with fallback to Georgia/serif */
-.stButton>button { background: linear-gradient(90deg, #ff8a00, #e52e71); color: white !important; border: none; border-radius: 25px; padding: 10px 20px; font-size: 1.2em; font-weight: bold; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; display: inline-flex; align-items: center; justify-content: center; margin-top: 5px; width: auto; min-width: 100px; font-family: 'Tiempos', 'Tiempos Text', Georgia, serif !important; }
+/* Change font to Tiempos for the entire app */
+* { 
+    font-family: 'Tiempos', 'Tiempos Text', Georgia, serif !important; 
+}
+
+.stButton>button { 
+    background: linear-gradient(90deg, #ff8a00, #e52e71); 
+    color: white !important; 
+    border: none; 
+    border-radius: 25px; 
+    padding: 10px 20px; 
+    font-size: 1.2em; 
+    font-weight: bold; 
+    cursor: pointer; 
+    transition: transform 0.2s ease, box-shadow 0.2s ease; 
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center; 
+    margin-top: 5px; 
+    width: auto; 
+    min-width: 100px;
+    font-family: 'Tiempos', 'Tiempos Text', Georgia, serif !important;
+}
+
 .stButton>button:hover { transform: scale(1.05); box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3); color: white !important; }
 .stButton>button:active { transform: scale(0.98); }
-
-/* Global font update to Tiempos */
-* { font-family: 'Tiempos', 'Tiempos Text', Georgia, serif !important; }
 
 div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button:nth-of-type(1) { background: linear-gradient(90deg, #29ABE2, #0077B6); color: white !important; }
 .horizontal-line { border-top: 2px solid #e0e0e0; margin: 15px 0; }
