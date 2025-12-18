@@ -9,24 +9,12 @@ import time
 import random
 
 # =============================
-# PAGE CONFIGURATION
-# =============================
-st.set_page_config(
-    page_title="EventGenie AI",
-    page_icon="🎫",
-    layout="centered",
-    initial_sidebar_state="expanded"
-)
-
-# =============================
 # MODEL AND CONFIGURATION SETUP
 # =============================
 
-# Hugging Face model IDs
 DistilGPT2_MODEL_ID = "IamPradeep/AETCSCB_OOD_IC_DistilGPT2_Fine-tuned"
 CLASSIFIER_ID = "IamPradeep/Query_Classifier_DistilBERT"
 
-# Random OOD Fallback Responses
 fallback_responses = [
     "I’m sorry, but I am unable to assist with this request. If you need help regarding event tickets, I’d be happy to support you.",
     "Apologies, but I am not able to provide assistance on this matter. Please let me know if you require help with event tickets.",
@@ -36,28 +24,7 @@ fallback_responses = [
     "Apologies, but this falls outside the scope of my support. I’m here if you need any help with event ticket issues.",
     "I'm sorry, but I cannot assist with this particular topic. If you have questions about event tickets, I’d be glad to help.",
     "I regret that I’m unable to provide assistance here. Please let me know how I can support you with event ticket matters.",
-    "Unfortunately, I am not equipped to assist with this. If you need help with event tickets, I am here for that.",
-    "I apologize, but I cannot help with this request. However, I’d be happy to assist with anything related to event tickets.",
-    "I’m sorry, but I’m unable to support this request. If it’s about event tickets, I’ll gladly help however I can.",
-    "This matter falls outside the assistance I can offer. Please let me know if you need help with event ticket-related inquiries.",
-    "Regrettably, this is not something I can assist with. I’m happy to help with any event ticket questions you may have.",
-    "I’m unable to provide support for this issue. However, I can assist with concerns regarding event tickets.",
-    "I apologize, but I cannot help with this matter. If your inquiry is related to event tickets, I’d be more than happy to assist.",
-    "I regret that I am unable to offer help in this case. I am, however, available for any event ticket-related questions.",
-    "Unfortunately, I’m not able to assist with this. Please let me know if there’s anything I can do regarding event tickets.",
-    "I'm sorry, but I cannot assist with this topic. However, I’m here to help with any event ticket concerns you may have.",
-    "Apologies, but this request falls outside of my support scope. If you need help with event tickets, I’m happy to assist.",
-    "I’m afraid I can’t help with this matter. If there’s anything related to event tickets you need, feel free to reach out.",
-    "This is beyond what I can assist with at the moment. Let me know if there’s anything I can do to help with event tickets.",
-    "Sorry, I’m unable to provide support on this issue. However, I’d be glad to assist with event ticket-related topics.",
-    "Apologies, but I can’t assist with this. Please let me know if you have any event ticket inquiries I can help with.",
-    "I’m unable to help with this matter. However, if you need assistance with event tickets, I’m here for you.",
-    "Unfortunately, I can’t support this request. I’d be happy to assist with anything related to event tickets instead.",
-    "I’m sorry, but I can’t help with this. If your concern is related to event tickets, I’ll do my best to assist.",
-    "Apologies, but this issue is outside of my capabilities. However, I’m available to help with event ticket-related requests.",
-    "I regret that I cannot assist with this particular matter. Please let me know how I can support you regarding event tickets.",
-    "I’m sorry, but I’m not able to help in this instance. I am, however, ready to assist with any questions about event tickets.",
-    "Unfortunately, I’m unable to help with this topic. Let me know if there's anything event ticket-related I can support you with."
+    "Unfortunately, I am not equipped to assist with this. If you need help with event tickets, I am here for that."
 ]
 
 # =============================
@@ -66,6 +33,7 @@ fallback_responses = [
 
 @st.cache_resource
 def load_spacy_model():
+    # Using the transformer model for high accuracy
     nlp = spacy.load("en_core_web_trf")
     return nlp
 
@@ -76,7 +44,7 @@ def load_gpt2_model_and_tokenizer():
         tokenizer = GPT2Tokenizer.from_pretrained(DistilGPT2_MODEL_ID)
         return model, tokenizer
     except Exception as e:
-        st.error(f"Failed to load GPT-2 model from Hugging Face Hub. Error: {e}")
+        st.error(f"Failed to load GPT-2 model. Error: {e}")
         return None, None
 
 @st.cache_resource(show_spinner=False)
@@ -86,7 +54,7 @@ def load_classifier_model():
         model = AutoModelForSequenceClassification.from_pretrained(CLASSIFIER_ID)
         return model, tokenizer
     except Exception as e:
-        st.error(f"Failed to load classifier model from Hugging Face Hub. Error: {e}")
+        st.error(f"Failed to load classifier model. Error: {e}")
         return None, None
 
 def is_ood(query: str, model, tokenizer):
@@ -98,7 +66,7 @@ def is_ood(query: str, model, tokenizer):
     with torch.no_grad():
         outputs = model(**inputs)
     pred_id = torch.argmax(outputs.logits, dim=1).item()
-    return pred_id == 1  # True if OOD (label 1)
+    return pred_id == 1 
 
 # =============================
 # ORIGINAL HELPER FUNCTIONS
@@ -227,320 +195,213 @@ def generate_response(model, tokenizer, instruction, max_length=256):
     return response[response_start:].strip()
 
 # =============================
-# CSS AND UI SETUP (EXTREMELY INTERACTIVE)
+# CSS AND UI SETUP
 # =============================
+st.set_page_config(page_title="Event Ticketing AI", page_icon="🎫", layout="wide")
 
 st.markdown(
     """
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    <style>
-        /* General Font and Body */
-        html, body, [class*="css"] {
-            font-family: 'Poppins', sans-serif !important;
-        }
-        
-        /* Main Container Background */
-        .stApp {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        }
+<style>
+/* Main Background and Font */
+[data-testid="stAppViewContainer"] {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
 
-        /* Custom Title Styling */
-        .title-container {
-            text-align: center;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.7);
-            border-radius: 15px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-            backdrop-filter: blur(4px);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            margin-bottom: 30px;
-        }
-        .title-text {
-            font-size: 3em;
-            font-weight: 700;
-            background: -webkit-linear-gradient(45deg, #0077B6, #e52e71);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .subtitle-text {
-            color: #555;
-            font-size: 1.1em;
-            margin-top: -10px;
-        }
+* { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; }
 
-        /* Interactive Buttons */
-        .stButton>button {
-            background: linear-gradient(90deg, #4b6cb7 0%, #182848 100%);
-            color: white !important;
-            border: none;
-            border-radius: 50px;
-            padding: 12px 28px;
-            font-weight: 600;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            transition: all 0.3s ease-in-out;
-            width: 100%;
-        }
-        .stButton>button:hover {
-            transform: translateY(-3px) scale(1.02);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-            background: linear-gradient(90deg, #182848 0%, #4b6cb7 100%);
-        }
-        
-        /* Secondary Button (Clear Chat) */
-        div[data-testid="stSidebar"] .stButton>button {
-            background: linear-gradient(90deg, #ff416c, #ff4b2b);
-        }
+/* Custom Chat Bubbles */
+.stChatMessage {
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
 
-        /* Chat Input Styling */
-        div[data-testid="stChatInput"] {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
-            border: 2px solid #e0e0e0;
-        }
+/* Assistant Bubble - Glassmorphism */
+[data-testid="stChatMessage"]:nth-child(even) {
+    background: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
 
-        /* Message Bubbles Animation */
-        .element-container {
-            animation: fadeIn 0.5s ease-in-out;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+/* Gradient Title */
+.gradient-text {
+    background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+    font-size: 45px !important;
+    text-align: center;
+}
 
-        /* Horizontal Line */
-        .horizontal-line {
-            height: 2px;
-            background: linear-gradient(to right, transparent, #ccc, transparent);
-            margin: 25px 0;
-        }
+/* Pulsing Button */
+.stButton>button {
+    background: linear-gradient(90deg, #6a11cb, #2575fc) !important;
+    color: white !important;
+    border-radius: 30px !important;
+    border: none !important;
+    padding: 12px 30px !important;
+    font-weight: bold !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 4px 15px rgba(106, 17, 203, 0.3) !important;
+}
 
-        /* Footer */
-        .footer {
-            position: fixed;
-            left: 0;
-            bottom: 0;
-            width: 100%;
-            background: rgba(255, 255, 255, 0.9);
-            color: #666;
-            text-align: center;
-            padding: 10px 0;
-            font-size: 12px;
-            z-index: 9999;
-            border-top: 1px solid #eaeaea;
-            backdrop-filter: blur(5px);
-        }
-        .main { padding-bottom: 60px; }
-        
-        /* Expander Styling */
-        .streamlit-expanderHeader {
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            font-weight: 600;
-            color: #333;
-        }
-    </style>
+.stButton>button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(106, 17, 203, 0.5) !important;
+}
+
+/* Sidebar Customization */
+[data-testid="stSidebar"] {
+    background-color: #ffffff !important;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+}
+
+.footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background: white;
+    color: #888;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 12px;
+    border-top: 1px solid #eee;
+    z-index: 999;
+}
+</style>
     """, unsafe_allow_html=True
 )
 
-st.markdown(
-    """
-    <div class="footer">
-        🔒 Designed solely for <b>event ticketing</b> queries. Responses outside this scope may be inaccurate.
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+# Sidebar UI
+with st.sidebar:
+    st.image("https://cdn-icons-png.flaticon.com/512/3443/3443338.png", width=80)
+    st.title("Bot Assistant")
+    st.info("I am an AI specialized in **Event Ticketing**. I can help you with bookings, refunds, and policy inquiries.")
+    
+    st.markdown("---")
+    st.subheader("Quick Links")
+    st.markdown("• [Support Portal](https://github.com/MarpakaPradeepSai)")
+    st.markdown("• [Terms of Service](#)")
+    
+    if st.button("🗑️ Clear Chat History"):
+        st.session_state.chat_history = []
+        st.session_state.generating = False
+        st.rerun()
 
-# =============================
-# HEADER SECTION
-# =============================
-st.markdown(
-    """
-    <div class="title-container">
-        <div class="title-text">EventGenie AI</div>
-        <div class="subtitle-text">Your Intelligent Ticketing Assistant</div>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+# Main Header
+st.markdown("<h1 class='gradient-text'>Event Ticketing AI</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color: #555;'>Your 24/7 intelligent guide for seamless event experiences.</p>", unsafe_allow_html=True)
 
-# --- INITIALIZE STATE VARIABLES ---
+# Footer
+st.markdown("<div class='footer'>Designed for Event Ticketing Support | © 2024 AI Assistant</div>", unsafe_allow_html=True)
+
+# ==================================
+# STATE INITIALIZATION
+# ==================================
 if "models_loaded" not in st.session_state:
     st.session_state.models_loaded = False
 if "generating" not in st.session_state:
     st.session_state.generating = False 
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
-    # Add a welcome message to history if empty
-    st.session_state.chat_history.append({
-        "role": "assistant",
-        "content": "👋 **Hello!** I'm here to help with your tickets, events, and refunds. How can I assist you today?",
-        "avatar": "🤖"
-    })
 
 example_queries = [
-    "How do I buy a ticket?", "How can I upgrade my ticket for the upcoming event in Hyderabad?",
-    "How do I change my personal details on my ticket?", "How can I find details about upcoming events?",
-    "How do I contact customer service?", "How do I get a refund?", "What is the ticket cancellation fee?",
-    "How can I track my ticket cancellation status?", "How can I sell my ticket?"
+    "How do I buy a ticket?", 
+    "How can I upgrade my ticket for the upcoming event in Hyderabad?",
+    "How do I change my personal details on my ticket?", 
+    "How do I get a refund?", 
+    "What is the ticket cancellation fee?",
+    "How can I sell my ticket?"
 ]
 
-# =============================
-# LOADING SCREEN
-# =============================
+# Model Loading Logic
 if not st.session_state.models_loaded:
-    with st.container():
-        st.info("🚀 Initializing AI Core...")
-        progress_bar = st.progress(0)
-        
-        try:
-            nlp = load_spacy_model()
-            progress_bar.progress(30)
-            
-            gpt2_model, gpt2_tokenizer = load_gpt2_model_and_tokenizer()
-            progress_bar.progress(70)
-            
-            clf_model, clf_tokenizer = load_classifier_model()
-            progress_bar.progress(100)
+    with st.status("🚀 Launching AI Engine...", expanded=True) as status:
+        st.write("Loading Language Models...")
+        nlp = load_spacy_model()
+        gpt2_model, gpt2_tokenizer = load_gpt2_model_and_tokenizer()
+        st.write("Configuring Classifier...")
+        clf_model, clf_tokenizer = load_classifier_model()
 
-            if all([nlp, gpt2_model, gpt2_tokenizer, clf_model, clf_tokenizer]):
-                st.session_state.models_loaded = True
-                st.session_state.nlp = nlp
-                st.session_state.model = gpt2_model
-                st.session_state.tokenizer = gpt2_tokenizer
-                st.session_state.clf_model = clf_model
-                st.session_state.clf_tokenizer = clf_tokenizer
-                time.sleep(0.5) # Aesthetic pause
-                st.rerun()
-            else:
-                st.error("Failed to load one or more models. Please refresh the page.")
-        except Exception as e:
-            st.error(f"Error loading models: {str(e)}")
+        if all([nlp, gpt2_model, gpt2_tokenizer, clf_model, clf_tokenizer]):
+            st.session_state.models_loaded = True
+            st.session_state.nlp = nlp
+            st.session_state.model = gpt2_model
+            st.session_state.tokenizer = gpt2_tokenizer
+            st.session_state.clf_model = clf_model
+            st.session_state.clf_tokenizer = clf_tokenizer
+            status.update(label="AI Engine Ready!", state="complete", expanded=False)
+            st.rerun()
+        else:
+            st.error("Engine failure. Please check connection.")
 
 # ==================================
-# MAIN CHAT INTERFACE
+# CHAT LOGIC
 # ==================================
-
 if st.session_state.models_loaded:
     
-    # --- SIDEBAR CONTROLS ---
-    with st.sidebar:
-        st.markdown("### ⚙️ Control Panel")
-        st.markdown("Use this panel to manage your session.")
-        
-        # Clear chat button in sidebar
-        if st.button("🗑️ Clear Conversation", key="reset_button", disabled=st.session_state.generating):
-            st.session_state.chat_history = []
-            st.session_state.chat_history.append({
-                "role": "assistant",
-                "content": "👋 **Hello!** I'm here to help with your tickets, events, and refunds. How can I assist you today?",
-                "avatar": "🤖"
-            })
-            st.session_state.generating = False
-            st.toast("Conversation cleared!", icon="🧹")
+    # Example Selection Row
+    st.write("### 💡 Suggestions")
+    cols = st.columns(3)
+    for i, q in enumerate(example_queries[:6]):
+        if cols[i % 3].button(q, key=f"ex_{i}", use_container_width=True):
+            # Logic to trigger prompt
+            st.session_state.generating = True
+            q_formatted = q[0].upper() + q[1:]
+            st.session_state.chat_history.append({"role": "user", "content": q_formatted, "avatar": "👤"})
             st.rerun()
-            
-        st.markdown("---")
-        st.markdown("### ℹ️ About")
-        st.info(
-            "This AI uses a fine-tuned **DistilGPT2** model for generation and **DistilBERT** for query classification."
-        )
 
-    # --- QUICK QUESTIONS SECTION ---
-    with st.expander("📝 **Quick Questions (Click to Expand)**", expanded=False):
-        st.markdown("Don't know what to ask? Try one of these:")
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            selected_query = st.selectbox(
-                "Select a query:", ["Choose a question..."] + example_queries,
-                key="query_selectbox", label_visibility="collapsed",
-                disabled=st.session_state.generating
-            )
-        with col2:
-            process_query_button = st.button(
-                "Ask ➡️", key="query_button",
-                disabled=st.session_state.generating
-            )
+    st.markdown("<br>", unsafe_allow_html=True)
 
-    # --- CHAT HISTORY DISPLAY ---
-    nlp = st.session_state.nlp
-    model = st.session_state.model
-    tokenizer = st.session_state.tokenizer
-    clf_model = st.session_state.clf_model
-    clf_tokenizer = st.session_state.clf_tokenizer
+    # Display Chat History
+    chat_container = st.container()
+    with chat_container:
+        for message in st.session_state.chat_history:
+            with st.chat_message(message["role"], avatar=message["avatar"]):
+                st.markdown(message["content"], unsafe_allow_html=True)
 
-    last_role = None
-
-    for message in st.session_state.chat_history:
-        # Visual separator between turns, except for the very first welcome message
-        if message["role"] == "user" and last_role == "assistant":
-             st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
-             
-        with st.chat_message(message["role"], avatar=message["avatar"]):
-            st.markdown(message["content"], unsafe_allow_html=True)
-        last_role = message["role"]
-
-    # --- FUNCTION: Handle Prompt ---
+    # Prompt Handling
     def handle_prompt(prompt_text):
-        if not prompt_text or not prompt_text.strip() or prompt_text == "Choose a question...":
-            st.toast("⚠️ Please enter or select a valid question.", icon="🚫")
+        if not prompt_text or not prompt_text.strip():
             return
-
         st.session_state.generating = True
-        
-        # Format input
         prompt_text = prompt_text[0].upper() + prompt_text[1:]
         st.session_state.chat_history.append({"role": "user", "content": prompt_text, "avatar": "👤"})
-        
         st.rerun()
 
-    # --- FUNCTION: Process Generation ---
     def process_generation():
         last_message = st.session_state.chat_history[-1]["content"]
-
+        
         with st.chat_message("assistant", avatar="🤖"):
             message_placeholder = st.empty()
-            full_response = ""
-
-            # Visual "Thinking" indicator
-            with st.status("Thinking...", expanded=True) as status:
-                st.write("Analyzing your request...")
-                time.sleep(0.5) # UX pause
-                
-                if is_ood(last_message, clf_model, clf_tokenizer):
-                    status.update(label="Topic outside scope", state="error", expanded=False)
+            
+            # Use a nice loading effect
+            with st.spinner("Analyzing and typing..."):
+                if is_ood(last_message, st.session_state.clf_model, st.session_state.clf_tokenizer):
                     full_response = random.choice(fallback_responses)
                 else:
-                    status.update(label="Drafting response", state="running", expanded=False)
-                    dynamic_placeholders = extract_dynamic_placeholders(last_message, nlp)
-                    response_gpt = generate_response(model, tokenizer, last_message)
+                    dynamic_placeholders = extract_dynamic_placeholders(last_message, st.session_state.nlp)
+                    response_gpt = generate_response(st.session_state.model, st.session_state.tokenizer, last_message)
                     full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
-                    status.update(label="Complete!", state="complete", expanded=False)
 
-            # Typewriter effect
+            # Interactive Streaming Effect
             streamed_text = ""
             for word in full_response.split(" "):
                 streamed_text += word + " "
-                message_placeholder.markdown(streamed_text + "⬤", unsafe_allow_html=True)
-                time.sleep(0.04) # Slightly faster for better feel
+                message_placeholder.markdown(streamed_text + "▌", unsafe_allow_html=True)
+                time.sleep(0.04)
             message_placeholder.markdown(full_response, unsafe_allow_html=True)
 
         st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
         st.session_state.generating = False
 
-    # --- LOGIC FLOW ---
-    
-    # 1. Handle Example Trigger
-    if process_query_button:
-        handle_prompt(selected_query)
-
-    # 2. Handle Chat Input
-    if prompt := st.chat_input("Type your question here...", disabled=st.session_state.generating):
+    # Input Field
+    if prompt := st.chat_input("Ask about your event ticket...", disabled=st.session_state.generating):
         handle_prompt(prompt)
 
-    # 3. Generate if locked
+    # Generation Trigger
     if st.session_state.generating:
         process_generation()
         st.rerun()
