@@ -53,8 +53,8 @@ The **Advanced Event Ticketing Customer Support Chatbot** is a sophisticated AI-
 │                   Out-of-Domain                      NER Processing           │
 │                       │                                    │                  │
 │                       ▼                                    ▼                  │
-│                 Polite Rejection              Dynamic Placeholder             │
-│                   Response                      Replacement                   │
+│                 Polite Rejection                    Dynamic Placeholder       │
+│                   Response                              Replacement           │
 │                                                                               │
 └───────────────────────────────────────────────────────────────────────────────┘
 ```
