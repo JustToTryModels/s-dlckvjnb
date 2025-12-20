@@ -80,10 +80,8 @@ def load_classifier_model():
         return None, None
 
 def preprocess_query(query: str) -> str:
-    """Normalize query for consistent classification"""
-    # Convert to lowercase for consistency
+    """Normalize query for consistent classification - convert to lowercase"""
     query = query.lower()
-    # Strip extra whitespace
     query = query.strip()
     return query
 
@@ -92,10 +90,7 @@ def is_ood(query: str, model, tokenizer):
     model.to(device)
     model.eval()
     
-    # Preprocess the query before classification
-    processed_query = preprocess_query(query)
-    
-    inputs = tokenizer(processed_query, return_tensors="pt", truncation=True, padding=True, max_length=256)
+    inputs = tokenizer(query, return_tensors="pt", truncation=True, padding=True, max_length=256)
     inputs = {k: v.to(device) for k, v in inputs.items()}
     with torch.no_grad():
         outputs = model(**inputs)
@@ -376,7 +371,8 @@ if st.session_state.models_loaded:
         # --- FIX: Set generating state to True to lock the UI ---
         st.session_state.generating = True
 
-        prompt_text = prompt_text[0].upper() + prompt_text[1:]
+        # Convert to lowercase and keep as is without capitalizing first letter
+        prompt_text = prompt_text.lower().strip()
         st.session_state.chat_history.append({"role": "user", "content": prompt_text, "avatar": "👤"})
 
         # Rerun to display the user's message and disable inputs immediately
