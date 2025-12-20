@@ -230,7 +230,7 @@ st.markdown(
 }
 
 h1 {
-    font-size: 40px !important;
+    font-size: 38px !important;
 }
 
 .stButton>button { 
