@@ -79,11 +79,23 @@ def load_classifier_model():
         st.error(f"Failed to load classifier model from Hugging Face Hub. Error: {e}")
         return None, None
 
+def preprocess_query(query: str) -> str:
+    """Normalize query for consistent classification"""
+    # Convert to lowercase for consistency
+    query = query.lower()
+    # Strip extra whitespace
+    query = query.strip()
+    return query
+
 def is_ood(query: str, model, tokenizer):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     model.eval()
-    inputs = tokenizer(query, return_tensors="pt", truncation=True, padding=True, max_length=256)
+    
+    # Preprocess the query before classification
+    processed_query = preprocess_query(query)
+    
+    inputs = tokenizer(processed_query, return_tensors="pt", truncation=True, padding=True, max_length=256)
     inputs = {k: v.to(device) for k, v in inputs.items()}
     with torch.no_grad():
         outputs = model(**inputs)
