@@ -279,7 +279,7 @@ div[data-testid="stChatInput"] { box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); borde
 st.markdown(
     """
     <div class="footer">
-        This is not a conversational AI. It is designed solely for <b>event ticketing</b> queries. Responses outside this scope may be inaccurate.
+        It is designed solely for <b>event ticketing</b> queries. Responses outside this scope may be inaccurate.
     </div>
     """,
     unsafe_allow_html=True
