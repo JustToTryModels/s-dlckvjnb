@@ -372,9 +372,17 @@ if st.session_state.models_loaded:
         # --- FIX: Set generating state to True to lock the UI ---
         st.session_state.generating = True
 
-        # Preprocess: first letter capital, rest lowercase
-        prompt_text = preprocess_query(prompt_text)
-        st.session_state.chat_history.append({"role": "user", "content": prompt_text, "avatar": "👤"})
+        # Store original text for display, processed text for models
+        original_text = prompt_text
+        processed_text = preprocess_query(prompt_text)
+        
+        # Store both original and processed in chat history
+        st.session_state.chat_history.append({
+            "role": "user", 
+            "content": original_text,
+            "processed_content": processed_text,
+            "avatar": "👤"
+        })
 
         # Rerun to display the user's message and disable inputs immediately
         st.rerun()
@@ -382,18 +390,20 @@ if st.session_state.models_loaded:
 
     def process_generation():
         # This function runs only after the UI is locked and the user message is shown
-        last_message = st.session_state.chat_history[-1]["content"]
+        last_message = st.session_state.chat_history[-1]
+        # Use processed content for models
+        processed_message = last_message.get("processed_content", last_message["content"])
 
         with st.chat_message("assistant", avatar="🤖"):
             message_placeholder = st.empty()
             full_response = ""
 
-            if is_ood(last_message, clf_model, clf_tokenizer):
+            if is_ood(processed_message, clf_model, clf_tokenizer):
                 full_response = random.choice(fallback_responses)
             else:
                 with st.spinner("Generating response..."):
-                    dynamic_placeholders = extract_dynamic_placeholders(last_message, nlp)
-                    response_gpt = generate_response(model, tokenizer, last_message)
+                    dynamic_placeholders = extract_dynamic_placeholders(processed_message, nlp)
+                    response_gpt = generate_response(model, tokenizer, processed_message)
                     full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
 
             streamed_text = ""
