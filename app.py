@@ -234,7 +234,7 @@ st.markdown(
     border: none; 
     border-radius: 25px; 
     padding: 10px 20px; 
-    font-size: 1.2em; 
+    font-size: 1.1em; 
     font-weight: bold; 
     cursor: pointer; 
     transition: transform 0.2s ease, box-shadow 0.2s ease; 
