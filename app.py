@@ -226,7 +226,7 @@ st.markdown(
 /* Change font to Tiempos for the entire app with global font size */
 * { 
     font-family: 'Tiempos', 'Tiempos Text', Georgia, serif !important;
-    font-size: 14px !important;
+    font-size: 14.5px !important;
 }
 
 h1 {
