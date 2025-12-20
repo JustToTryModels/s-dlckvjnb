@@ -80,9 +80,10 @@ def load_classifier_model():
         return None, None
 
 def preprocess_query(query: str) -> str:
-    """Normalize query for consistent classification - convert to lowercase"""
-    query = query.lower()
+    """Normalize query - first letter capital, rest lowercase"""
     query = query.strip()
+    if len(query) > 0:
+        query = query[0].upper() + query[1:].lower()
     return query
 
 def is_ood(query: str, model, tokenizer):
@@ -371,8 +372,8 @@ if st.session_state.models_loaded:
         # --- FIX: Set generating state to True to lock the UI ---
         st.session_state.generating = True
 
-        # Convert to lowercase and keep as is without capitalizing first letter
-        prompt_text = prompt_text.lower().strip()
+        # Preprocess: first letter capital, rest lowercase
+        prompt_text = preprocess_query(prompt_text)
         st.session_state.chat_history.append({"role": "user", "content": prompt_text, "avatar": "👤"})
 
         # Rerun to display the user's message and disable inputs immediately
