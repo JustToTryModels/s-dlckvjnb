@@ -3,7 +3,7 @@ import torch
 from transformers import (
     GPT2Tokenizer, GPT2LMHeadModel,
     AutoTokenizer, AutoModelForSequenceClassification,
-    T5ForConditionalGeneration, T5Tokenizer
+    BartForConditionalGeneration, BartTokenizer
 )
 from gliner import GLiNER
 import time
@@ -58,8 +58,8 @@ fallback_responses = [
 
 @st.cache_resource
 def load_spelling_model():
-    tokenizer = T5Tokenizer.from_pretrained(SPELLING_MODEL_ID)
-    model = T5ForConditionalGeneration.from_pretrained(SPELLING_MODEL_ID)
+    tokenizer = BartTokenizer.from_pretrained(SPELLING_MODEL_ID)
+    model = BartForConditionalGeneration.from_pretrained(SPELLING_MODEL_ID)
     return model, tokenizer
 
 @st.cache_resource
@@ -88,7 +88,7 @@ def load_classifier_model():
         return None, None
 
 def correct_spelling(text: str, model, tokenizer) -> str:
-    """Correct spelling errors using T5 model"""
+    """Correct spelling errors using BART model"""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     model.eval()
@@ -110,7 +110,7 @@ def preprocess_query(query: str, spelling_model, spelling_tokenizer) -> str:
     """Normalize query - correct spelling, first letter capital, rest lowercase"""
     query = query.strip()
     if len(query) > 0:
-        # First correct spelling using T5 model
+        # First correct spelling using BART model
         query = correct_spelling(query, spelling_model, spelling_tokenizer)
         # Then normalize case
         query = query[0].upper() + query[1:].lower()
