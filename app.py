@@ -8,6 +8,7 @@ from transformers import (
 from gliner import GLiNER
 import time
 import random
+import re
 
 # =============================
 # MODEL AND CONFIGURATION SETUP
@@ -217,6 +218,48 @@ def replace_placeholders(response, dynamic_placeholders, static_placeholders):
         response = response.replace(placeholder, value)
     return response
 
+def clean_event_name(event_text):
+    """
+    Remove generic words like 'event', 'events', 'show', 'concert' etc. from event name
+    and return only the specific event name in bold + 'event' in lowercase
+    
+    Examples:
+    - "Cricket Event" -> "<b>Cricket</b> event"
+    - "Music Concert" -> "<b>Music</b> concert"
+    - "Baseball" -> "<b>Baseball</b> event"
+    - "Rock Music Festival" -> "<b>Rock Music Festival</b> event"
+    """
+    # Generic words to remove/handle (case-insensitive)
+    generic_words = ['event', 'events', 'show', 'shows', 'concert', 'concerts', 
+                     'match', 'matches', 'game', 'games', 'festival', 'festivals',
+                     'tournament', 'tournaments', 'competition', 'competitions']
+    
+    # Split the event text into words
+    words = event_text.strip().split()
+    
+    if not words:
+        return "event"
+    
+    # Check if the last word is a generic word
+    last_word_lower = words[-1].lower()
+    
+    if last_word_lower in generic_words:
+        # Remove the generic word from the event name
+        specific_words = words[:-1]
+        generic_word = words[-1].lower()  # Keep generic word in lowercase
+        
+        if specific_words:
+            # Format: "<b>Specific Name</b> generic"
+            specific_name = ' '.join(word.title() for word in specific_words)
+            return f"<b>{specific_name}</b> {generic_word}"
+        else:
+            # Only generic word, return as plain "event"
+            return "event"
+    else:
+        # No generic word at the end, add "event" after the bold name
+        specific_name = ' '.join(word.title() for word in words)
+        return f"<b>{specific_name}</b> event"
+
 def extract_dynamic_placeholders(user_question, gliner_model):
     labels = ["event", "city", "location", "venue"]
     entities = gliner_model.predict_entities(user_question, labels, threshold=0.4)
@@ -225,7 +268,9 @@ def extract_dynamic_placeholders(user_question, gliner_model):
     
     for ent in entities:
         if ent["label"] == "event":
-            dynamic_placeholders['{{EVENT}}'] = f"<b>{ent['text'].title()}</b>"
+            # Clean the event name - make only specific name bold, generic word lowercase
+            cleaned_event = clean_event_name(ent['text'])
+            dynamic_placeholders['{{EVENT}}'] = cleaned_event
         elif ent["label"] in ["city", "location", "venue"]:
             dynamic_placeholders['{{CITY}}'] = f"<b>{ent['text'].title()}</b>"
     
