@@ -2,9 +2,9 @@ import streamlit as st
 import torch
 from transformers import (
     GPT2Tokenizer, GPT2LMHeadModel,
-    AutoTokenizer, AutoModelForSequenceClassification
+    AutoTokenizer, AutoModelForSequenceClassification,
+    pipeline
 )
-from gliner import GLiNER
 import time
 import random
 
@@ -15,6 +15,7 @@ import random
 # Hugging Face model IDs
 DistilGPT2_MODEL_ID = "IamPradeep/AETCSCB_OOD_IC_DistilGPT2_Fine-tuned"
 CLASSIFIER_ID = "IamPradeep/Query_Classifier_DistilBERT"
+NER_MODEL_ID = "dslim/bert-base-NER"
 
 # Random OOD Fallback Responses
 fallback_responses = [
@@ -55,9 +56,9 @@ fallback_responses = [
 # =============================
 
 @st.cache_resource
-def load_gliner_model():
-    model = GLiNER.from_pretrained("urchade/gliner_medium-v2.1")
-    return model
+def load_ner_pipeline():
+    ner_pipe = pipeline("ner", model=NER_MODEL_ID, aggregation_strategy="simple")
+    return ner_pipe
 
 @st.cache_resource(show_spinner=False)
 def load_gpt2_model_and_tokenizer():
@@ -187,17 +188,26 @@ def replace_placeholders(response, dynamic_placeholders, static_placeholders):
         response = response.replace(placeholder, value)
     return response
 
-def extract_dynamic_placeholders(user_question, gliner_model):
-    labels = ["event", "city", "location", "venue"]
-    entities = gliner_model.predict_entities(user_question, labels, threshold=0.4)
+def extract_dynamic_placeholders(user_question, ner_pipeline):
+    entities = ner_pipeline(user_question)
     
     dynamic_placeholders = {'{{EVENT}}': "event", '{{CITY}}': "city"}
     
-    for ent in entities:
-        if ent["label"] == "event":
-            dynamic_placeholders['{{EVENT}}'] = f"<b>{ent['text'].title()}</b>"
-        elif ent["label"] in ["city", "location", "venue"]:
-            dynamic_placeholders['{{CITY}}'] = f"<b>{ent['text'].title()}</b>"
+    for entity in entities:
+        entity_group = entity.get("entity_group", "")
+        word = entity.get("word", "").replace("##", "")
+        
+        # LOC = Location (cities, countries, etc.)
+        if entity_group == "LOC":
+            dynamic_placeholders['{{CITY}}'] = f"<b>{word.title()}</b>"
+        # MISC = Miscellaneous (events are often tagged as MISC)
+        elif entity_group == "MISC":
+            dynamic_placeholders['{{EVENT}}'] = f"<b>{word.title()}</b>"
+        # ORG = Organization (sometimes events/venues are tagged as ORG)
+        elif entity_group == "ORG":
+            # Only use ORG if we haven't found an event yet
+            if dynamic_placeholders['{{EVENT}}'] == "event":
+                dynamic_placeholders['{{EVENT}}'] = f"<b>{word.title()}</b>"
     
     return dynamic_placeholders
 
@@ -293,11 +303,11 @@ st.markdown(
 
 st.markdown("<h1>Advanced Event Ticketing Chatbot</h1>", unsafe_allow_html=True)
 
-# --- FIX: Initialize state variables for managing generation process ---
+# --- Initialize state variables for managing generation process ---
 if "models_loaded" not in st.session_state:
     st.session_state.models_loaded = False
 if "generating" not in st.session_state:
-    st.session_state.generating = False # This will track if a response is being generated
+    st.session_state.generating = False
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
@@ -311,13 +321,13 @@ example_queries = [
 if not st.session_state.models_loaded:
     with st.spinner("Loading models and resources... Please wait..."):
         try:
-            gliner_model = load_gliner_model()
+            ner_pipeline = load_ner_pipeline()
             gpt2_model, gpt2_tokenizer = load_gpt2_model_and_tokenizer()
             clf_model, clf_tokenizer = load_classifier_model()
 
-            if all([gliner_model, gpt2_model, gpt2_tokenizer, clf_model, clf_tokenizer]):
+            if all([ner_pipeline, gpt2_model, gpt2_tokenizer, clf_model, clf_tokenizer]):
                 st.session_state.models_loaded = True
-                st.session_state.gliner_model = gliner_model
+                st.session_state.ner_pipeline = ner_pipeline
                 st.session_state.model = gpt2_model
                 st.session_state.tokenizer = gpt2_tokenizer
                 st.session_state.clf_model = clf_model
@@ -335,7 +345,7 @@ if not st.session_state.models_loaded:
 if st.session_state.models_loaded:
     st.write("Ask me about ticket bookings, cancellations, refunds, or any event-related inquiries!")
 
-    # --- FIX: Disable input widgets while generating a response ---
+    # Disable input widgets while generating a response
     selected_query = st.selectbox(
         "Choose a query from examples:", ["Choose your question"] + example_queries,
         key="query_selectbox", label_visibility="collapsed",
@@ -346,7 +356,7 @@ if st.session_state.models_loaded:
         disabled=st.session_state.generating
     )
 
-    gliner_model = st.session_state.gliner_model
+    ner_pipeline = st.session_state.ner_pipeline
     model = st.session_state.model
     tokenizer = st.session_state.tokenizer
     clf_model = st.session_state.clf_model
@@ -361,20 +371,16 @@ if st.session_state.models_loaded:
             st.markdown(message["content"], unsafe_allow_html=True)
         last_role = message["role"]
 
-    # --- REFACTORED: Create a unified function to handle prompt processing ---
     def handle_prompt(prompt_text):
         if not prompt_text or not prompt_text.strip():
             st.toast("⚠️ Please enter or select a question.")
             return
 
-        # --- FIX: Set generating state to True to lock the UI ---
         st.session_state.generating = True
 
-        # Store original text for display, processed text for models
         original_text = prompt_text
         processed_text = preprocess_query(prompt_text)
         
-        # Store both original and processed in chat history
         st.session_state.chat_history.append({
             "role": "user", 
             "content": original_text,
@@ -382,14 +388,11 @@ if st.session_state.models_loaded:
             "avatar": "👤"
         })
 
-        # Rerun to display the user's message and disable inputs immediately
         st.rerun()
 
 
     def process_generation():
-        # This function runs only after the UI is locked and the user message is shown
         last_message = st.session_state.chat_history[-1]
-        # Use processed content for models
         processed_message = last_message.get("processed_content", last_message["content"])
 
         with st.chat_message("assistant", avatar="🤖"):
@@ -400,7 +403,7 @@ if st.session_state.models_loaded:
                 full_response = random.choice(fallback_responses)
             else:
                 with st.spinner("Generating response..."):
-                    dynamic_placeholders = extract_dynamic_placeholders(processed_message, gliner_model)
+                    dynamic_placeholders = extract_dynamic_placeholders(processed_message, ner_pipeline)
                     response_gpt = generate_response(model, tokenizer, processed_message)
                     full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
 
@@ -412,12 +415,10 @@ if st.session_state.models_loaded:
             message_placeholder.markdown(full_response, unsafe_allow_html=True)
 
         st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
-        # --- FIX: Set generating state to False to unlock UI ---
         st.session_state.generating = False
 
 
-    # --- LOGIC FLOW ---
-    # 1. Handle triggers (button click or chat input)
+    # Logic flow
     if process_query_button:
         if selected_query != "Choose your question":
             handle_prompt(selected_query)
@@ -427,17 +428,13 @@ if st.session_state.models_loaded:
     if prompt := st.chat_input("Enter your own question:", disabled=st.session_state.generating):
         handle_prompt(prompt)
 
-    # 2. If UI is locked, it means we need to generate a response
     if st.session_state.generating:
         process_generation()
-        # After generation, rerun to update the UI with the final response and re-enable inputs
         st.rerun()
 
-
-    # The clear button should also be disabled during generation
     if st.session_state.chat_history:
         if st.button("Clear Chat", key="reset_button", disabled=st.session_state.generating):
             st.session_state.chat_history = []
-            st.session_state.generating = False # Ensure state is reset
+            st.session_state.generating = False
             last_role = None
             st.rerun()
