@@ -4,7 +4,7 @@ from transformers import (
     GPT2Tokenizer, GPT2LMHeadModel,
     AutoTokenizer, AutoModelForSequenceClassification
 )
-import spacy
+from gliner import GLiNER
 import time
 import random
 
@@ -55,9 +55,9 @@ fallback_responses = [
 # =============================
 
 @st.cache_resource
-def load_spacy_model():
-    nlp = spacy.load("en_core_web_trf")
-    return nlp
+def load_gliner_model():
+    model = GLiNER.from_pretrained("urchade/gliner_medium-v2.1")
+    return model
 
 @st.cache_resource(show_spinner=False)
 def load_gpt2_model_and_tokenizer():
@@ -187,20 +187,18 @@ def replace_placeholders(response, dynamic_placeholders, static_placeholders):
         response = response.replace(placeholder, value)
     return response
 
-def extract_dynamic_placeholders(user_question, nlp):
-    doc = nlp(user_question)
-    dynamic_placeholders = {}
-    for ent in doc.ents:
-        if ent.label_ == "EVENT":
-            event_text = ent.text.title()
-            dynamic_placeholders['{{EVENT}}'] = f"<b>{event_text}</b>"
-        elif ent.label_ == "GPE":
-            city_text = ent.text.title()
-            dynamic_placeholders['{{CITY}}'] = f"<b>{city_text}</b>"
-    if '{{EVENT}}' not in dynamic_placeholders:
-        dynamic_placeholders['{{EVENT}}'] = "event"
-    if '{{CITY}}' not in dynamic_placeholders:
-        dynamic_placeholders['{{CITY}}'] = "city"
+def extract_dynamic_placeholders(user_question, gliner_model):
+    labels = ["event", "city", "location", "venue"]
+    entities = gliner_model.predict_entities(user_question, labels, threshold=0.4)
+    
+    dynamic_placeholders = {'{{EVENT}}': "event", '{{CITY}}': "city"}
+    
+    for ent in entities:
+        if ent["label"] == "event":
+            dynamic_placeholders['{{EVENT}}'] = f"<b>{ent['text'].title()}</b>"
+        elif ent["label"] in ["city", "location", "venue"]:
+            dynamic_placeholders['{{CITY}}'] = f"<b>{ent['text'].title()}</b>"
+    
     return dynamic_placeholders
 
 def generate_response(model, tokenizer, instruction, max_length=256):
@@ -313,13 +311,13 @@ example_queries = [
 if not st.session_state.models_loaded:
     with st.spinner("Loading models and resources... Please wait..."):
         try:
-            nlp = load_spacy_model()
+            gliner_model = load_gliner_model()
             gpt2_model, gpt2_tokenizer = load_gpt2_model_and_tokenizer()
             clf_model, clf_tokenizer = load_classifier_model()
 
-            if all([nlp, gpt2_model, gpt2_tokenizer, clf_model, clf_tokenizer]):
+            if all([gliner_model, gpt2_model, gpt2_tokenizer, clf_model, clf_tokenizer]):
                 st.session_state.models_loaded = True
-                st.session_state.nlp = nlp
+                st.session_state.gliner_model = gliner_model
                 st.session_state.model = gpt2_model
                 st.session_state.tokenizer = gpt2_tokenizer
                 st.session_state.clf_model = clf_model
@@ -348,7 +346,7 @@ if st.session_state.models_loaded:
         disabled=st.session_state.generating
     )
 
-    nlp = st.session_state.nlp
+    gliner_model = st.session_state.gliner_model
     model = st.session_state.model
     tokenizer = st.session_state.tokenizer
     clf_model = st.session_state.clf_model
@@ -402,7 +400,7 @@ if st.session_state.models_loaded:
                 full_response = random.choice(fallback_responses)
             else:
                 with st.spinner("Generating response..."):
-                    dynamic_placeholders = extract_dynamic_placeholders(processed_message, nlp)
+                    dynamic_placeholders = extract_dynamic_placeholders(processed_message, gliner_model)
                     response_gpt = generate_response(model, tokenizer, processed_message)
                     full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
 
