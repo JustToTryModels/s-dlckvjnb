@@ -3,3 +3,4 @@ gliner==0.2.7
 torch
 transformers
 sentencepiece
+textblob
