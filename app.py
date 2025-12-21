@@ -2,10 +2,10 @@ import streamlit as st
 import torch
 from transformers import (
     GPT2Tokenizer, GPT2LMHeadModel,
-    AutoTokenizer, AutoModelForSequenceClassification
+    AutoTokenizer, AutoModelForSequenceClassification,
+    T5ForConditionalGeneration, T5Tokenizer
 )
 from gliner import GLiNER
-from textblob import TextBlob
 import time
 import random
 
@@ -16,6 +16,7 @@ import random
 # Hugging Face model IDs
 DistilGPT2_MODEL_ID = "IamPradeep/AETCSCB_OOD_IC_DistilGPT2_Fine-tuned"
 CLASSIFIER_ID = "IamPradeep/Query_Classifier_DistilBERT"
+SPELLING_MODEL_ID = "oliverguhr/spelling-correction-english-base"
 
 # Random OOD Fallback Responses
 fallback_responses = [
@@ -56,6 +57,12 @@ fallback_responses = [
 # =============================
 
 @st.cache_resource
+def load_spelling_model():
+    tokenizer = T5Tokenizer.from_pretrained(SPELLING_MODEL_ID)
+    model = T5ForConditionalGeneration.from_pretrained(SPELLING_MODEL_ID)
+    return model, tokenizer
+
+@st.cache_resource
 def load_gliner_model():
     model = GLiNER.from_pretrained("urchade/gliner_medium-v2.1")
     return model
@@ -80,17 +87,31 @@ def load_classifier_model():
         st.error(f"Failed to load classifier model from Hugging Face Hub. Error: {e}")
         return None, None
 
-def correct_spelling(text: str) -> str:
-    """Correct spelling errors using TextBlob"""
-    blob = TextBlob(text)
-    return str(blob.correct())
+def correct_spelling(text: str, model, tokenizer) -> str:
+    """Correct spelling errors using T5 model"""
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    model.eval()
+    
+    inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=256).to(device)
+    
+    with torch.no_grad():
+        outputs = model.generate(
+            **inputs,
+            max_length=256,
+            num_beams=5,
+            early_stopping=True
+        )
+    
+    corrected_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    return corrected_text
 
-def preprocess_query(query: str) -> str:
+def preprocess_query(query: str, spelling_model, spelling_tokenizer) -> str:
     """Normalize query - correct spelling, first letter capital, rest lowercase"""
     query = query.strip()
     if len(query) > 0:
-        # First correct spelling
-        query = correct_spelling(query)
+        # First correct spelling using T5 model
+        query = correct_spelling(query, spelling_model, spelling_tokenizer)
         # Then normalize case
         query = query[0].upper() + query[1:].lower()
     return query
@@ -320,12 +341,15 @@ example_queries = [
 if not st.session_state.models_loaded:
     with st.spinner("Loading models and resources... Please wait..."):
         try:
+            spelling_model, spelling_tokenizer = load_spelling_model()
             gliner_model = load_gliner_model()
             gpt2_model, gpt2_tokenizer = load_gpt2_model_and_tokenizer()
             clf_model, clf_tokenizer = load_classifier_model()
 
-            if all([gliner_model, gpt2_model, gpt2_tokenizer, clf_model, clf_tokenizer]):
+            if all([spelling_model, spelling_tokenizer, gliner_model, gpt2_model, gpt2_tokenizer, clf_model, clf_tokenizer]):
                 st.session_state.models_loaded = True
+                st.session_state.spelling_model = spelling_model
+                st.session_state.spelling_tokenizer = spelling_tokenizer
                 st.session_state.gliner_model = gliner_model
                 st.session_state.model = gpt2_model
                 st.session_state.tokenizer = gpt2_tokenizer
@@ -355,6 +379,8 @@ if st.session_state.models_loaded:
         disabled=st.session_state.generating
     )
 
+    spelling_model = st.session_state.spelling_model
+    spelling_tokenizer = st.session_state.spelling_tokenizer
     gliner_model = st.session_state.gliner_model
     model = st.session_state.model
     tokenizer = st.session_state.tokenizer
@@ -378,7 +404,7 @@ if st.session_state.models_loaded:
         st.session_state.generating = True
 
         original_text = prompt_text
-        processed_text = preprocess_query(prompt_text)
+        processed_text = preprocess_query(prompt_text, spelling_model, spelling_tokenizer)
         
         st.session_state.chat_history.append({
             "role": "user", 
