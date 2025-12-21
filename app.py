@@ -5,6 +5,7 @@ from transformers import (
     AutoTokenizer, AutoModelForSequenceClassification
 )
 from gliner import GLiNER
+from textblob import TextBlob
 import time
 import random
 
@@ -79,10 +80,18 @@ def load_classifier_model():
         st.error(f"Failed to load classifier model from Hugging Face Hub. Error: {e}")
         return None, None
 
+def correct_spelling(text: str) -> str:
+    """Correct spelling errors using TextBlob"""
+    blob = TextBlob(text)
+    return str(blob.correct())
+
 def preprocess_query(query: str) -> str:
-    """Normalize query - first letter capital, rest lowercase"""
+    """Normalize query - correct spelling, first letter capital, rest lowercase"""
     query = query.strip()
     if len(query) > 0:
+        # First correct spelling
+        query = correct_spelling(query)
+        # Then normalize case
         query = query[0].upper() + query[1:].lower()
     return query
 
@@ -293,11 +302,11 @@ st.markdown(
 
 st.markdown("<h1>Advanced Event Ticketing Chatbot</h1>", unsafe_allow_html=True)
 
-# --- FIX: Initialize state variables for managing generation process ---
+# --- Initialize state variables for managing generation process ---
 if "models_loaded" not in st.session_state:
     st.session_state.models_loaded = False
 if "generating" not in st.session_state:
-    st.session_state.generating = False # This will track if a response is being generated
+    st.session_state.generating = False
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
@@ -335,7 +344,7 @@ if not st.session_state.models_loaded:
 if st.session_state.models_loaded:
     st.write("Ask me about ticket bookings, cancellations, refunds, or any event-related inquiries!")
 
-    # --- FIX: Disable input widgets while generating a response ---
+    # Disable input widgets while generating a response
     selected_query = st.selectbox(
         "Choose a query from examples:", ["Choose your question"] + example_queries,
         key="query_selectbox", label_visibility="collapsed",
@@ -361,20 +370,16 @@ if st.session_state.models_loaded:
             st.markdown(message["content"], unsafe_allow_html=True)
         last_role = message["role"]
 
-    # --- REFACTORED: Create a unified function to handle prompt processing ---
     def handle_prompt(prompt_text):
         if not prompt_text or not prompt_text.strip():
             st.toast("⚠️ Please enter or select a question.")
             return
 
-        # --- FIX: Set generating state to True to lock the UI ---
         st.session_state.generating = True
 
-        # Store original text for display, processed text for models
         original_text = prompt_text
         processed_text = preprocess_query(prompt_text)
         
-        # Store both original and processed in chat history
         st.session_state.chat_history.append({
             "role": "user", 
             "content": original_text,
@@ -382,14 +387,11 @@ if st.session_state.models_loaded:
             "avatar": "👤"
         })
 
-        # Rerun to display the user's message and disable inputs immediately
         st.rerun()
 
 
     def process_generation():
-        # This function runs only after the UI is locked and the user message is shown
         last_message = st.session_state.chat_history[-1]
-        # Use processed content for models
         processed_message = last_message.get("processed_content", last_message["content"])
 
         with st.chat_message("assistant", avatar="🤖"):
@@ -412,12 +414,10 @@ if st.session_state.models_loaded:
             message_placeholder.markdown(full_response, unsafe_allow_html=True)
 
         st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
-        # --- FIX: Set generating state to False to unlock UI ---
         st.session_state.generating = False
 
 
-    # --- LOGIC FLOW ---
-    # 1. Handle triggers (button click or chat input)
+    # Logic flow
     if process_query_button:
         if selected_query != "Choose your question":
             handle_prompt(selected_query)
@@ -427,17 +427,13 @@ if st.session_state.models_loaded:
     if prompt := st.chat_input("Enter your own question:", disabled=st.session_state.generating):
         handle_prompt(prompt)
 
-    # 2. If UI is locked, it means we need to generate a response
     if st.session_state.generating:
         process_generation()
-        # After generation, rerun to update the UI with the final response and re-enable inputs
         st.rerun()
 
-
-    # The clear button should also be disabled during generation
     if st.session_state.chat_history:
         if st.button("Clear Chat", key="reset_button", disabled=st.session_state.generating):
             st.session_state.chat_history = []
-            st.session_state.generating = False # Ensure state is reset
+            st.session_state.generating = False
             last_role = None
             st.rerun()
