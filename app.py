@@ -6,10 +6,8 @@ from transformers import (
 )
 from gliner import GLiNER
 from symspellpy import SymSpell, Verbosity
-import stanza
 import time
 import random
-import re
 import pkg_resources
 
 # =============================
@@ -59,22 +57,12 @@ fallback_responses = [
 # =============================
 
 @st.cache_resource
-def load_stanza_model():
-    """Load Stanza NLP model for entity extraction"""
-    nlp = stanza.Pipeline(lang='en', processors='tokenize,ner', verbose=False)
-    return nlp
-
-@st.cache_resource
 def load_symspell_model():
-    """Load SymSpell model for spelling correction"""
     sym_spell = SymSpell(max_dictionary_edit_distance=2, prefix_length=7)
-    
-    # Load dictionary
     dictionary_path = pkg_resources.resource_filename(
         "symspellpy", "frequency_dictionary_en_82_765.txt"
     )
     sym_spell.load_dictionary(dictionary_path, term_index=0, count_index=1)
-    
     return sym_spell
 
 @st.cache_resource
@@ -107,7 +95,6 @@ def correct_spelling(text: str, sym_spell) -> str:
     suggestions = sym_spell.lookup_compound(text, max_edit_distance=2, transfer_casing=True)
     
     if suggestions:
-        # Return the best suggestion (first one with highest edit distance)
         return suggestions[0].term
     return text
 
@@ -222,103 +209,17 @@ def replace_placeholders(response, dynamic_placeholders, static_placeholders):
         response = response.replace(placeholder, value)
     return response
 
-def clean_event_name(event_text):
-    """
-    Remove generic words like 'event', 'events', 'show', 'concert' etc. from event name
-    and return only the specific event name in bold + 'event' in lowercase
-    
-    Examples:
-    - "Cricket Event" -> "<b>Cricket</b> event"
-    - "Music Concert" -> "<b>Music</b> concert"
-    - "Baseball" -> "<b>Baseball</b> event"
-    - "Rock Music Festival" -> "<b>Rock Music Festival</b> event"
-    """
-    # Generic words to remove/handle (case-insensitive)
-    generic_words = ['event', 'events', 'show', 'shows', 'concert', 'concerts', 
-                     'match', 'matches', 'game', 'games', 'festival', 'festivals',
-                     'tournament', 'tournaments', 'competition', 'competitions']
-    
-    # Split the event text into words
-    words = event_text.strip().split()
-    
-    if not words:
-        return "event"
-    
-    # Check if the last word is a generic word
-    last_word_lower = words[-1].lower()
-    
-    if last_word_lower in generic_words:
-        # Remove the generic word from the event name
-        specific_words = words[:-1]
-        generic_word = words[-1].lower()  # Keep generic word in lowercase
-        
-        if specific_words:
-            # Format: "<b>Specific Name</b> generic"
-            specific_name = ' '.join(word.title() for word in specific_words)
-            return f"<b>{specific_name}</b> {generic_word}"
-        else:
-            # Only generic word, return as plain "event"
-            return "event"
-    else:
-        # No generic word at the end, add "event" after the bold name
-        specific_name = ' '.join(word.title() for word in words)
-        return f"<b>{specific_name}</b> event"
-
-def extract_dynamic_placeholders(user_question, stanza_nlp):
-    """Extract entities using Stanza NLP model"""
-    doc = stanza_nlp(user_question)
+def extract_dynamic_placeholders(user_question, gliner_model):
+    labels = ["event", "city", "location", "venue"]
+    entities = gliner_model.predict_entities(user_question, labels, threshold=0.4)
     
     dynamic_placeholders = {'{{EVENT}}': "event", '{{CITY}}': "city"}
     
-    # Words that shouldn't be considered events
-    exclude_words = {
-        'event', 'events', 'upcoming', 'scheduled', 'new', 'any',
-        'the', 'a', 'an', 'your', 'my', 'this', 'that'
-    }
-    
-    # Known event types and sports keywords
-    event_keywords = {
-        'cricket', 'music', 'baseball', 'football', 'hockey', 'tennis',
-        'concert', 'festival', 'tournament', 'conference', 'marathon',
-        'exhibition', 'summit', 'championship', 'show', 'comedy',
-        'theater', 'play', 'opera', 'ballet', 'dance', 'wrestling',
-        'boxing', 'mma', 'volleyball', 'basketball', 'badminton',
-        'swimming', 'cycling', 'racing', 'golf', 'rugby', 'polo',
-        'horse racing', 'skateboarding', 'surfing', 'skiing'
-    }
-    
-    for ent in doc.entities:
-        entity_text = ent.text.strip()
-        entity_lower = entity_text.lower()
-        
-        # Skip excluded words
-        if entity_lower in exclude_words:
-            continue
-        
-        # Handle geopolitical entities (cities, locations)
-        if ent.type == "GPE":
-            dynamic_placeholders['{{CITY}}'] = f"<b>{entity_text.title()}</b>"
-        
-        # Handle organizations and other entities that could be event names
-        elif ent.type == "ORG":
-            # Check if it contains event keywords
-            if any(keyword in entity_lower for keyword in event_keywords):
-                cleaned_event = clean_event_name(entity_text)
-                dynamic_placeholders['{{EVENT}}'] = cleaned_event
-        
-        # Handle miscellaneous entities
-        elif ent.type == "MISC":
-            # Check if it contains event keywords
-            if any(keyword in entity_lower for keyword in event_keywords):
-                cleaned_event = clean_event_name(entity_text)
-                dynamic_placeholders['{{EVENT}}'] = cleaned_event
-        
-        # Handle person entities (could be artists/performers)
-        elif ent.type == "PERSON":
-            # Check if context suggests it's an event (look for music/concert keywords)
-            if any(context in user_question.lower() for context in ['concert', 'music', 'show', 'performance', 'artist']):
-                cleaned_event = clean_event_name(entity_text)
-                dynamic_placeholders['{{EVENT}}'] = cleaned_event
+    for ent in entities:
+        if ent["label"] == "event":
+            dynamic_placeholders['{{EVENT}}'] = f"<b>{ent['text'].title()}</b>"
+        elif ent["label"] in ["city", "location", "venue"]:
+            dynamic_placeholders['{{CITY}}'] = f"<b>{ent['text'].title()}</b>"
     
     return dynamic_placeholders
 
@@ -433,14 +334,14 @@ if not st.session_state.models_loaded:
     with st.spinner("Loading models and resources... Please wait..."):
         try:
             sym_spell = load_symspell_model()
-            stanza_nlp = load_stanza_model()
+            gliner_model = load_gliner_model()
             gpt2_model, gpt2_tokenizer = load_gpt2_model_and_tokenizer()
             clf_model, clf_tokenizer = load_classifier_model()
 
-            if all([sym_spell, stanza_nlp, gpt2_model, gpt2_tokenizer, clf_model, clf_tokenizer]):
+            if all([sym_spell, gliner_model, gpt2_model, gpt2_tokenizer, clf_model, clf_tokenizer]):
                 st.session_state.models_loaded = True
                 st.session_state.sym_spell = sym_spell
-                st.session_state.stanza_nlp = stanza_nlp
+                st.session_state.gliner_model = gliner_model
                 st.session_state.model = gpt2_model
                 st.session_state.tokenizer = gpt2_tokenizer
                 st.session_state.clf_model = clf_model
@@ -470,7 +371,7 @@ if st.session_state.models_loaded:
     )
 
     sym_spell = st.session_state.sym_spell
-    stanza_nlp = st.session_state.stanza_nlp
+    gliner_model = st.session_state.gliner_model
     model = st.session_state.model
     tokenizer = st.session_state.tokenizer
     clf_model = st.session_state.clf_model
@@ -517,7 +418,7 @@ if st.session_state.models_loaded:
                 full_response = random.choice(fallback_responses)
             else:
                 with st.spinner("Generating response..."):
-                    dynamic_placeholders = extract_dynamic_placeholders(processed_message, stanza_nlp)
+                    dynamic_placeholders = extract_dynamic_placeholders(processed_message, gliner_model)
                     response_gpt = generate_response(model, tokenizer, processed_message)
                     full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
 
