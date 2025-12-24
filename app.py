@@ -2,7 +2,8 @@ import streamlit as st
 import torch
 from transformers import (
     GPT2Tokenizer, GPT2LMHeadModel,
-    AutoTokenizer, AutoModelForSequenceClassification
+    AutoTokenizer, AutoModelForSequenceClassification,
+    pipeline
 )
 from gliner import GLiNER
 from symspellpy import SymSpell, Verbosity
@@ -56,6 +57,14 @@ fallback_responses = [
 # =============================
 # MODEL LOADING FUNCTIONS
 # =============================
+
+@st.cache_resource
+def load_ner_pipeline():
+    """Load Hugging Face NER pipeline for entity extraction"""
+    ner = pipeline("ner", 
+                   model="dbmdz/bert-large-cased-finetuned-conll03-english", 
+                   aggregation_strategy="simple")
+    return ner
 
 @st.cache_resource
 def load_symspell_model():
@@ -257,19 +266,51 @@ def clean_event_name(event_text):
         specific_name = ' '.join(word.title() for word in words)
         return f"<b>{specific_name}</b> event"
 
-def extract_dynamic_placeholders(user_question, gliner_model):
-    labels = ["event", "city", "location", "venue"]
-    entities = gliner_model.predict_entities(user_question, labels, threshold=0.4)
+def extract_dynamic_placeholders(user_question, ner_pipeline):
+    """Extract entities using Hugging Face BERT NER model"""
+    results = ner_pipeline(user_question)
     
     dynamic_placeholders = {'{{EVENT}}': "event", '{{CITY}}': "city"}
     
-    for ent in entities:
-        if ent["label"] == "event":
-            # Clean the event name - make only specific name bold, generic word lowercase
-            cleaned_event = clean_event_name(ent['text'])
-            dynamic_placeholders['{{EVENT}}'] = cleaned_event
-        elif ent["label"] in ["city", "location", "venue"]:
-            dynamic_placeholders['{{CITY}}'] = f"<b>{ent['text'].title()}</b>"
+    # Generic event descriptors to exclude
+    exclude_words = {
+        'event', 'events', 'upcoming', 'scheduled', 'new', 'any',
+        'the', 'a', 'an', 'your', 'my', 'this', 'that', 'show',
+        'concert', 'match', 'game', 'festival'
+    }
+    
+    # Known event keywords
+    event_keywords = {
+        'cricket', 'music', 'baseball', 'football', 'hockey', 'tennis',
+        'concert', 'festival', 'tournament', 'conference', 'marathon',
+        'exhibition', 'summit', 'championship', 'show', 'comedy',
+        'theater', 'play', 'opera', 'ballet', 'dance'
+    }
+    
+    for result in results:
+        entity_type = result['entity_group']
+        entity_text = result['word'].strip()
+        entity_lower = entity_text.lower()
+        
+        # Skip excluded words
+        if entity_lower in exclude_words:
+            continue
+        
+        # Handle locations
+        if entity_type == "LOC":
+            dynamic_placeholders['{{CITY}}'] = f"<b>{entity_text.title()}</b>"
+        
+        # Handle organizations that could be events
+        elif entity_type == "ORG":
+            if any(keyword in entity_lower for keyword in event_keywords):
+                cleaned_event = clean_event_name(entity_text)
+                dynamic_placeholders['{{EVENT}}'] = cleaned_event
+        
+        # Handle miscellaneous entities (might be event names)
+        elif entity_type == "MISC":
+            if any(keyword in entity_lower for keyword in event_keywords):
+                cleaned_event = clean_event_name(entity_text)
+                dynamic_placeholders['{{EVENT}}'] = cleaned_event
     
     return dynamic_placeholders
 
@@ -384,14 +425,14 @@ if not st.session_state.models_loaded:
     with st.spinner("Loading models and resources... Please wait..."):
         try:
             sym_spell = load_symspell_model()
-            gliner_model = load_gliner_model()
+            ner_pipeline = load_ner_pipeline()
             gpt2_model, gpt2_tokenizer = load_gpt2_model_and_tokenizer()
             clf_model, clf_tokenizer = load_classifier_model()
 
-            if all([sym_spell, gliner_model, gpt2_model, gpt2_tokenizer, clf_model, clf_tokenizer]):
+            if all([sym_spell, ner_pipeline, gpt2_model, gpt2_tokenizer, clf_model, clf_tokenizer]):
                 st.session_state.models_loaded = True
                 st.session_state.sym_spell = sym_spell
-                st.session_state.gliner_model = gliner_model
+                st.session_state.ner_pipeline = ner_pipeline
                 st.session_state.model = gpt2_model
                 st.session_state.tokenizer = gpt2_tokenizer
                 st.session_state.clf_model = clf_model
@@ -421,7 +462,7 @@ if st.session_state.models_loaded:
     )
 
     sym_spell = st.session_state.sym_spell
-    gliner_model = st.session_state.gliner_model
+    ner_pipeline = st.session_state.ner_pipeline
     model = st.session_state.model
     tokenizer = st.session_state.tokenizer
     clf_model = st.session_state.clf_model
@@ -468,7 +509,7 @@ if st.session_state.models_loaded:
                 full_response = random.choice(fallback_responses)
             else:
                 with st.spinner("Generating response..."):
-                    dynamic_placeholders = extract_dynamic_placeholders(processed_message, gliner_model)
+                    dynamic_placeholders = extract_dynamic_placeholders(processed_message, ner_pipeline)
                     response_gpt = generate_response(model, tokenizer, processed_message)
                     full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
 
