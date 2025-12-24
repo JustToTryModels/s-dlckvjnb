@@ -2,11 +2,11 @@ import streamlit as st
 import torch
 from transformers import (
     GPT2Tokenizer, GPT2LMHeadModel,
-    AutoTokenizer, AutoModelForSequenceClassification,
-    pipeline
+    AutoTokenizer, AutoModelForSequenceClassification
 )
 from gliner import GLiNER
 from symspellpy import SymSpell, Verbosity
+import stanza
 import time
 import random
 import re
@@ -59,12 +59,10 @@ fallback_responses = [
 # =============================
 
 @st.cache_resource
-def load_ner_pipeline():
-    """Load Hugging Face NER pipeline for entity extraction"""
-    ner = pipeline("ner", 
-                   model="dbmdz/bert-large-cased-finetuned-conll03-english", 
-                   aggregation_strategy="simple")
-    return ner
+def load_stanza_model():
+    """Load Stanza NLP model for entity extraction"""
+    nlp = stanza.Pipeline(lang='en', processors='tokenize,ner', verbose=False)
+    return nlp
 
 @st.cache_resource
 def load_symspell_model():
@@ -266,49 +264,59 @@ def clean_event_name(event_text):
         specific_name = ' '.join(word.title() for word in words)
         return f"<b>{specific_name}</b> event"
 
-def extract_dynamic_placeholders(user_question, ner_pipeline):
-    """Extract entities using Hugging Face BERT NER model"""
-    results = ner_pipeline(user_question)
+def extract_dynamic_placeholders(user_question, stanza_nlp):
+    """Extract entities using Stanza NLP model"""
+    doc = stanza_nlp(user_question)
     
     dynamic_placeholders = {'{{EVENT}}': "event", '{{CITY}}': "city"}
     
-    # Generic event descriptors to exclude
+    # Words that shouldn't be considered events
     exclude_words = {
         'event', 'events', 'upcoming', 'scheduled', 'new', 'any',
-        'the', 'a', 'an', 'your', 'my', 'this', 'that', 'show',
-        'concert', 'match', 'game', 'festival'
+        'the', 'a', 'an', 'your', 'my', 'this', 'that'
     }
     
-    # Known event keywords
+    # Known event types and sports keywords
     event_keywords = {
         'cricket', 'music', 'baseball', 'football', 'hockey', 'tennis',
         'concert', 'festival', 'tournament', 'conference', 'marathon',
         'exhibition', 'summit', 'championship', 'show', 'comedy',
-        'theater', 'play', 'opera', 'ballet', 'dance'
+        'theater', 'play', 'opera', 'ballet', 'dance', 'wrestling',
+        'boxing', 'mma', 'volleyball', 'basketball', 'badminton',
+        'swimming', 'cycling', 'racing', 'golf', 'rugby', 'polo',
+        'horse racing', 'skateboarding', 'surfing', 'skiing'
     }
     
-    for result in results:
-        entity_type = result['entity_group']
-        entity_text = result['word'].strip()
+    for ent in doc.entities:
+        entity_text = ent.text.strip()
         entity_lower = entity_text.lower()
         
         # Skip excluded words
         if entity_lower in exclude_words:
             continue
         
-        # Handle locations
-        if entity_type == "LOC":
+        # Handle geopolitical entities (cities, locations)
+        if ent.type == "GPE":
             dynamic_placeholders['{{CITY}}'] = f"<b>{entity_text.title()}</b>"
         
-        # Handle organizations that could be events
-        elif entity_type == "ORG":
+        # Handle organizations and other entities that could be event names
+        elif ent.type == "ORG":
+            # Check if it contains event keywords
             if any(keyword in entity_lower for keyword in event_keywords):
                 cleaned_event = clean_event_name(entity_text)
                 dynamic_placeholders['{{EVENT}}'] = cleaned_event
         
-        # Handle miscellaneous entities (might be event names)
-        elif entity_type == "MISC":
+        # Handle miscellaneous entities
+        elif ent.type == "MISC":
+            # Check if it contains event keywords
             if any(keyword in entity_lower for keyword in event_keywords):
+                cleaned_event = clean_event_name(entity_text)
+                dynamic_placeholders['{{EVENT}}'] = cleaned_event
+        
+        # Handle person entities (could be artists/performers)
+        elif ent.type == "PERSON":
+            # Check if context suggests it's an event (look for music/concert keywords)
+            if any(context in user_question.lower() for context in ['concert', 'music', 'show', 'performance', 'artist']):
                 cleaned_event = clean_event_name(entity_text)
                 dynamic_placeholders['{{EVENT}}'] = cleaned_event
     
@@ -425,14 +433,14 @@ if not st.session_state.models_loaded:
     with st.spinner("Loading models and resources... Please wait..."):
         try:
             sym_spell = load_symspell_model()
-            ner_pipeline = load_ner_pipeline()
+            stanza_nlp = load_stanza_model()
             gpt2_model, gpt2_tokenizer = load_gpt2_model_and_tokenizer()
             clf_model, clf_tokenizer = load_classifier_model()
 
-            if all([sym_spell, ner_pipeline, gpt2_model, gpt2_tokenizer, clf_model, clf_tokenizer]):
+            if all([sym_spell, stanza_nlp, gpt2_model, gpt2_tokenizer, clf_model, clf_tokenizer]):
                 st.session_state.models_loaded = True
                 st.session_state.sym_spell = sym_spell
-                st.session_state.ner_pipeline = ner_pipeline
+                st.session_state.stanza_nlp = stanza_nlp
                 st.session_state.model = gpt2_model
                 st.session_state.tokenizer = gpt2_tokenizer
                 st.session_state.clf_model = clf_model
@@ -462,7 +470,7 @@ if st.session_state.models_loaded:
     )
 
     sym_spell = st.session_state.sym_spell
-    ner_pipeline = st.session_state.ner_pipeline
+    stanza_nlp = st.session_state.stanza_nlp
     model = st.session_state.model
     tokenizer = st.session_state.tokenizer
     clf_model = st.session_state.clf_model
@@ -509,7 +517,7 @@ if st.session_state.models_loaded:
                 full_response = random.choice(fallback_responses)
             else:
                 with st.spinner("Generating response..."):
-                    dynamic_placeholders = extract_dynamic_placeholders(processed_message, ner_pipeline)
+                    dynamic_placeholders = extract_dynamic_placeholders(processed_message, stanza_nlp)
                     response_gpt = generate_response(model, tokenizer, processed_message)
                     full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
 
