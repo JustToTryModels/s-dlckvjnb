@@ -67,7 +67,7 @@ def load_symspell_model():
 
 @st.cache_resource
 def load_gliner_model():
-    model = GLiNER.from_pretrained("urchade/gliner_large-v2.1")
+    model = GLiNER.from_pretrained("gliner-community/gliner_small-v2.5")
     return model
 
 @st.cache_resource(show_spinner=False)
