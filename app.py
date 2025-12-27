@@ -56,9 +56,9 @@ fallback_responses = [
 # =============================
 
 @st.cache_resource
-def load_spelling_corrector():
-    device = 0 if torch.cuda.is_available() else -1
-    return pipeline("text2text-generation", model="oliverguhr/spelling-correction-english-base", device=device)
+def load_spell_corrector():
+    """Load the spelling correction pipeline"""
+    return pipeline("text2text-generation", model="oliverguhr/spelling-correction-english-base")
 
 @st.cache_resource
 def load_gliner_model():
@@ -85,20 +85,17 @@ def load_classifier_model():
         st.error(f"Failed to load classifier model from Hugging Face Hub. Error: {e}")
         return None, None
 
-def correct_spelling(text: str, spell_corrector) -> str:
-    """Correct spelling errors using HF pipeline"""
-    # The pipeline returns a list of dicts, e.g. [{'generated_text': 'corrected text'}]
-    result = spell_corrector(text, max_length=128)
-    return result[0]['generated_text']
-
 def preprocess_query(query: str, spell_corrector) -> str:
-    """Normalize query - correct spelling. HF model handles casing generally."""
+    """Normalize query - correct spelling, first letter capital, rest lowercase"""
     query = query.strip()
     if len(query) > 0:
-        # Correct spelling using the HF pipeline
-        query = correct_spelling(query, spell_corrector)
-        # Note: Removed manual casing query[0].upper() + query[1:].lower() 
-        # because the HF pipeline returns naturally cased text.
+        # Correct spelling using the Hugging Face pipeline
+        # max_length=128 is used as per the provided example snippet
+        corrected_result = spell_corrector(query, max_length=128)
+        query = corrected_result[0]['generated_text']
+        
+        # Normalize case (First letter upper, rest lower)
+        query = query[0].upper() + query[1:].lower()
     return query
 
 def is_ood(query: str, model, tokenizer):
@@ -210,10 +207,10 @@ def extract_dynamic_placeholders(user_question, gliner_model):
     
     for ent in entities:
         if ent["label"] == "event":
-            # Keep as extracted by GLiNER (no .title())
+            # Keeping value exactly as extracted by GLiNER, removing .title()
             dynamic_placeholders['{{EVENT}}'] = f"<b>{ent['text']}</b>"
         elif ent["label"] in ["city", "location", "venue"]:
-            # Keep as extracted by GLiNER (no .title())
+            # Keeping value exactly as extracted by GLiNER, removing .title()
             dynamic_placeholders['{{CITY}}'] = f"<b>{ent['text']}</b>"
     
     return dynamic_placeholders
@@ -328,7 +325,7 @@ example_queries = [
 if not st.session_state.models_loaded:
     with st.spinner("Loading models and resources... Please wait..."):
         try:
-            spell_corrector = load_spelling_corrector()
+            spell_corrector = load_spell_corrector()
             gliner_model = load_gliner_model()
             gpt2_model, gpt2_tokenizer = load_gpt2_model_and_tokenizer()
             clf_model, clf_tokenizer = load_classifier_model()
