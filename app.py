@@ -57,8 +57,8 @@ fallback_responses = [
 
 @st.cache_resource
 def load_spell_corrector():
-    model = pipeline("text2text-generation", model="oliverguhr/spelling-correction-english-base")
-    return model
+    # Switched to a context-aware model (T5) which is better at preserving entities like "USA"
+    return pipeline("text2text-generation", model="vennify/t5-base-grammar-correction")
 
 @st.cache_resource
 def load_gliner_model():
@@ -86,13 +86,16 @@ def load_classifier_model():
         return None, None
 
 def preprocess_query(query: str, spell_corrector) -> str:
-    """Normalize query - adjust casing first, then correct spelling"""
+    """Normalize query - adjust casing first, then correct spelling using context-aware model"""
     query = query.strip()
     if len(query) > 0:
         # 1. Adjust casing: only first letter capital, rest small
         query = query[0].upper() + query[1:].lower()
         
         # 2. Send to spelling corrector
+        # Note: T5 models usually prefer a prefix instruction for grammar correction
+        # The vennify model is trained to correct text directly, but adding a prefix helps sometimes.
+        # We will pass the text directly as the pipeline handles the task "text2text-generation".
         results = spell_corrector(query, max_length=128)
         if results and len(results) > 0:
             query = results[0]['generated_text'].strip()
@@ -390,7 +393,7 @@ if st.session_state.models_loaded:
         original_text = prompt_text
         # The preprocess_query function now implements the required pipeline:
         # 1. Adjust casing (First Upper, rest lower)
-        # 2. Spelling correction
+        # 2. Spelling correction using context-aware T5 model
         processed_text = preprocess_query(prompt_text, spell_corrector)
         
         st.session_state.chat_history.append({
