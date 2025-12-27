@@ -56,9 +56,9 @@ fallback_responses = [
 # =============================
 
 @st.cache_resource
-def load_spelling_model():
-    # Load the spelling correction model using the pipeline
-    return pipeline("text2text-generation", model="oliverguhr/spelling-correction-english-base")
+def load_spelling_corrector():
+    device = 0 if torch.cuda.is_available() else -1
+    return pipeline("text2text-generation", model="oliverguhr/spelling-correction-english-base", device=device)
 
 @st.cache_resource
 def load_gliner_model():
@@ -85,25 +85,20 @@ def load_classifier_model():
         st.error(f"Failed to load classifier model from Hugging Face Hub. Error: {e}")
         return None, None
 
-def correct_spelling(text: str, spell_pipeline) -> str:
-    """Correct spelling errors using the Hugging Face pipeline"""
-    try:
-        # Run the model on the query
-        result = spell_pipeline(text, max_length=128)
-        # Extract the corrected text from the result
-        return result[0]['generated_text']
-    except Exception as e:
-        # Fallback to original text if correction fails
-        return text
+def correct_spelling(text: str, spell_corrector) -> str:
+    """Correct spelling errors using HF pipeline"""
+    # The pipeline returns a list of dicts, e.g. [{'generated_text': 'corrected text'}]
+    result = spell_corrector(text, max_length=128)
+    return result[0]['generated_text']
 
-def preprocess_query(query: str, spell_pipeline) -> str:
-    """Normalize query - correct spelling, first letter capital, rest lowercase"""
+def preprocess_query(query: str, spell_corrector) -> str:
+    """Normalize query - correct spelling. HF model handles casing generally."""
     query = query.strip()
     if len(query) > 0:
-        # First correct spelling using the Hugging Face pipeline
-        query = correct_spelling(query, spell_pipeline)
-        # Then normalize case
-        query = query[0].upper() + query[1:].lower()
+        # Correct spelling using the HF pipeline
+        query = correct_spelling(query, spell_corrector)
+        # Note: Removed manual casing query[0].upper() + query[1:].lower() 
+        # because the HF pipeline returns naturally cased text.
     return query
 
 def is_ood(query: str, model, tokenizer):
@@ -215,11 +210,11 @@ def extract_dynamic_placeholders(user_question, gliner_model):
     
     for ent in entities:
         if ent["label"] == "event":
-            # CHANGE: Removed .title() to keep the extracted text exactly as is
+            # Keep as extracted by GLiNER (no .title())
             dynamic_placeholders['{{EVENT}}'] = f"<b>{ent['text']}</b>"
         elif ent["label"] in ["city", "location", "venue"]:
-            # Kept .title() as requested to capitalize first letter of every word for city
-            dynamic_placeholders['{{CITY}}'] = f"<b>{ent['text'].title()}</b>"
+            # Keep as extracted by GLiNER (no .title())
+            dynamic_placeholders['{{CITY}}'] = f"<b>{ent['text']}</b>"
     
     return dynamic_placeholders
 
@@ -333,17 +328,14 @@ example_queries = [
 if not st.session_state.models_loaded:
     with st.spinner("Loading models and resources... Please wait..."):
         try:
-            # Changed: Load the new spelling model pipeline instead of symspell
-            spell_pipeline = load_spelling_model()
+            spell_corrector = load_spelling_corrector()
             gliner_model = load_gliner_model()
             gpt2_model, gpt2_tokenizer = load_gpt2_model_and_tokenizer()
             clf_model, clf_tokenizer = load_classifier_model()
 
-            # Updated check to include spell_pipeline
-            if all([spell_pipeline, gliner_model, gpt2_model, gpt2_tokenizer, clf_model, clf_tokenizer]):
+            if all([spell_corrector, gliner_model, gpt2_model, gpt2_tokenizer, clf_model, clf_tokenizer]):
                 st.session_state.models_loaded = True
-                # Changed: Store spell_pipeline instead of sym_spell
-                st.session_state.spell_pipeline = spell_pipeline
+                st.session_state.spell_corrector = spell_corrector
                 st.session_state.gliner_model = gliner_model
                 st.session_state.model = gpt2_model
                 st.session_state.tokenizer = gpt2_tokenizer
@@ -373,8 +365,7 @@ if st.session_state.models_loaded:
         disabled=st.session_state.generating
     )
 
-    # Changed: Retrieve spell_pipeline instead of sym_spell
-    spell_pipeline = st.session_state.spell_pipeline
+    spell_corrector = st.session_state.spell_corrector
     gliner_model = st.session_state.gliner_model
     model = st.session_state.model
     tokenizer = st.session_state.tokenizer
@@ -398,8 +389,7 @@ if st.session_state.models_loaded:
         st.session_state.generating = True
 
         original_text = prompt_text
-        # Changed: Pass spell_pipeline to preprocess_query
-        processed_text = preprocess_query(prompt_text, spell_pipeline)
+        processed_text = preprocess_query(prompt_text, spell_corrector)
         
         st.session_state.chat_history.append({
             "role": "user", 
