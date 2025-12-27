@@ -85,21 +85,18 @@ def load_classifier_model():
         st.error(f"Failed to load classifier model from Hugging Face Hub. Error: {e}")
         return None, None
 
-def correct_spelling(text: str, spell_corrector) -> str:
-    """Correct spelling errors using Hugging Face pipeline"""
-    results = spell_corrector(text, max_length=128)
-    if results and len(results) > 0:
-        return results[0]['generated_text']
-    return text
-
 def preprocess_query(query: str, spell_corrector) -> str:
-    """Normalize query - correct spelling, first letter capital, rest lowercase"""
+    """Normalize query - adjust casing first, then correct spelling"""
     query = query.strip()
     if len(query) > 0:
-        # First correct spelling using the HF pipeline
-        query = correct_spelling(query, spell_corrector)
-        # Then normalize case
+        # 1. Adjust casing: only first letter capital, rest small
         query = query[0].upper() + query[1:].lower()
+        
+        # 2. Send to spelling corrector
+        results = spell_corrector(query, max_length=128)
+        if results and len(results) > 0:
+            query = results[0]['generated_text'].strip()
+            
     return query
 
 def is_ood(query: str, model, tokenizer):
@@ -205,15 +202,17 @@ def replace_placeholders(response, dynamic_placeholders, static_placeholders):
 
 def extract_dynamic_placeholders(user_question, gliner_model):
     labels = ["event", "city", "location", "venue"]
+    # user_question is the spelling-corrected output from the pipeline
     entities = gliner_model.predict_entities(user_question, labels, threshold=0.4)
     
     dynamic_placeholders = {'{{EVENT}}': "event", '{{CITY}}': "city"}
     
     for ent in entities:
         if ent["label"] == "event":
+            # Apply .title() to Event
             dynamic_placeholders['{{EVENT}}'] = f"<b>{ent['text'].title()}</b>"
         elif ent["label"] in ["city", "location", "venue"]:
-            # Fixed: Removed .title() to keep City/Location/Venue as extracted by GLiNER
+            # Keep City as extracted (no .title())
             dynamic_placeholders['{{CITY}}'] = f"<b>{ent['text']}</b>"
     
     return dynamic_placeholders
@@ -389,6 +388,9 @@ if st.session_state.models_loaded:
         st.session_state.generating = True
 
         original_text = prompt_text
+        # The preprocess_query function now implements the required pipeline:
+        # 1. Adjust casing (First Upper, rest lower)
+        # 2. Spelling correction
         processed_text = preprocess_query(prompt_text, spell_corrector)
         
         st.session_state.chat_history.append({
@@ -403,17 +405,22 @@ if st.session_state.models_loaded:
 
     def process_generation():
         last_message = st.session_state.chat_history[-1]
+        # This processed_text is the output of Step 2 (Spelling Correction)
         processed_message = last_message.get("processed_content", last_message["content"])
 
         with st.chat_message("assistant", avatar="🤖"):
             message_placeholder = st.empty()
             full_response = ""
 
+            # Step 3: Check OOD using the DistilBERT Classifier
             if is_ood(processed_message, clf_model, clf_tokenizer):
                 full_response = random.choice(fallback_responses)
             else:
+                # Step 3 (Cont): If In-Domain, send to DistilGPT2 and GLiNER
                 with st.spinner("Generating response..."):
+                    # Extract entities using GLiNER on the processed text
                     dynamic_placeholders = extract_dynamic_placeholders(processed_message, gliner_model)
+                    # Generate response using DistilGPT2 on the processed text
                     response_gpt = generate_response(model, tokenizer, processed_message)
                     full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
 
