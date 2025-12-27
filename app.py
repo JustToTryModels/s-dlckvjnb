@@ -16,7 +16,6 @@ import random
 # Hugging Face model IDs
 DistilGPT2_MODEL_ID = "IamPradeep/AETCSCB_OOD_IC_DistilGPT2_Fine-tuned"
 CLASSIFIER_ID = "IamPradeep/Query_Classifier_DistilBERT"
-SPELL_MODEL_ID = "oliverguhr/spelling-correction-english-base"
 
 # Random OOD Fallback Responses
 fallback_responses = [
@@ -58,8 +57,8 @@ fallback_responses = [
 
 @st.cache_resource
 def load_spell_corrector():
-    # Loading the spelling correction pipeline
-    return pipeline("text2text-generation", model=SPELL_MODEL_ID)
+    """Load the Hugging Face spelling correction pipeline"""
+    return pipeline("text2text-generation", model="oliverguhr/spelling-correction-english-base")
 
 @st.cache_resource
 def load_gliner_model():
@@ -86,19 +85,14 @@ def load_classifier_model():
         st.error(f"Failed to load classifier model from Hugging Face Hub. Error: {e}")
         return None, None
 
-def correct_spelling(text: str, spell_corrector) -> str:
-    """Correct spelling errors using Hugging Face Pipeline"""
-    corrected = spell_corrector(text, max_length=128)
-    return corrected[0]['generated_text']
-
 def preprocess_query(query: str, spell_corrector) -> str:
-    """Normalize query - correct spelling, first letter capital, rest lowercase"""
+    """Normalize query - correct spelling using HF pipeline"""
     query = query.strip()
     if len(query) > 0:
-        # First correct spelling using the transformer model
-        query = correct_spelling(query, spell_corrector)
-        # Then normalize case
-        query = query[0].upper() + query[1:].lower()
+        # Correct spelling using the text2text-generation model
+        corrected = spell_corrector(query, max_length=128)
+        if corrected:
+            query = corrected[0]['generated_text']
     return query
 
 def is_ood(query: str, model, tokenizer):
@@ -210,10 +204,9 @@ def extract_dynamic_placeholders(user_question, gliner_model):
     
     for ent in entities:
         if ent["label"] == "event":
-            # Event remains titled (capitalized first letters)
             dynamic_placeholders['{{EVENT}}'] = f"<b>{ent['text'].title()}</b>"
         elif ent["label"] in ["city", "location", "venue"]:
-            # City extracted AS IS from the model output
+            # {{CITY}} value kept as extracted by GLiNER, no title casing applied
             dynamic_placeholders['{{CITY}}'] = f"<b>{ent['text']}</b>"
     
     return dynamic_placeholders
