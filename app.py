@@ -201,18 +201,23 @@ def replace_placeholders(response, dynamic_placeholders, static_placeholders):
     return response
 
 def extract_dynamic_placeholders(user_question, gliner_model):
-    labels = ["event", "City", "Location", "Venue", "State", "Region", "Continent", "country", "Province"]
-    # user_question is the spelling-corrected output from the pipeline
+    # Labels should match how GLiNER returns them
+    labels = ["Event", "City", "Location", "Venue", "State", "Region", "Continent", "Country", "Province"]
+    
     entities = gliner_model.predict_entities(user_question, labels, threshold=0.4)
     
     dynamic_placeholders = {'{{EVENT}}': "event", '{{CITY}}': "city"}
     
     for ent in entities:
-        if ent["label"] == "event":
+        # Convert label to lowercase for consistent comparison
+        label = ent["label"].lower()
+        
+        if label == "event":
             # Apply .title() to Event
             dynamic_placeholders['{{EVENT}}'] = f"<b>{ent['text'].title()}</b>"
-        elif ent["label"] in ["City", "Location", "Venue", "State", "Region", "Continent", "country", "Province"]:
-            # Keep City as extracted (no .title())
+        
+        elif label in ["city", "location", "venue", "state", "region", "continent", "country", "province"]:
+            # Keep City as extracted (no .title()), assuming the spelling model handles casing (e.g., "USA", "New York")
             dynamic_placeholders['{{CITY}}'] = f"<b>{ent['text']}</b>"
     
     return dynamic_placeholders
