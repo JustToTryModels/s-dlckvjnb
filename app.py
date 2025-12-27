@@ -57,8 +57,8 @@ fallback_responses = [
 
 @st.cache_resource
 def load_spell_corrector():
-    # Context-aware model for better entity preservation
-    return pipeline("text2text-generation", model="vennify/t5-base-grammar-correction")
+    model = pipeline("text2text-generation", model="oliverguhr/spelling-correction-english-base")
+    return model
 
 @st.cache_resource
 def load_gliner_model():
@@ -112,7 +112,7 @@ def is_ood(query: str, model, tokenizer):
     return pred_id == 1  # True if OOD (label 1)
 
 # =============================
-# HELPER FUNCTIONS
+# ORIGINAL HELPER FUNCTIONS
 # =============================
 
 static_placeholders = {
@@ -201,22 +201,18 @@ def replace_placeholders(response, dynamic_placeholders, static_placeholders):
     return response
 
 def extract_dynamic_placeholders(user_question, gliner_model):
-    # Updated labels including various location types
-    labels = ["Event", "City", "Location", "Venue", "State", "Region", "Continent", "Country", "Province"]
-    
+    labels = ["event", "city", "location", "venue"]
+    # user_question is the spelling-corrected output from the pipeline
     entities = gliner_model.predict_entities(user_question, labels, threshold=0.4)
     
     dynamic_placeholders = {'{{EVENT}}': "event", '{{CITY}}': "city"}
     
     for ent in entities:
-        # Normalize label to lowercase for comparison
-        label = ent["label"].lower()
-        
-        if label == "event":
+        if ent["label"] == "event":
             # Apply .title() to Event
             dynamic_placeholders['{{EVENT}}'] = f"<b>{ent['text'].title()}</b>"
-        elif label in ["city", "location", "venue", "state", "region", "continent", "country", "province"]:
-            # Keep City as extracted (preserving output from spelling model, e.g., "USA")
+        elif ent["label"] in ["city", "location", "venue"]:
+            # Keep City as extracted (no .title())
             dynamic_placeholders['{{CITY}}'] = f"<b>{ent['text']}</b>"
     
     return dynamic_placeholders
@@ -392,6 +388,9 @@ if st.session_state.models_loaded:
         st.session_state.generating = True
 
         original_text = prompt_text
+        # The preprocess_query function now implements the required pipeline:
+        # 1. Adjust casing (First Upper, rest lower)
+        # 2. Spelling correction
         processed_text = preprocess_query(prompt_text, spell_corrector)
         
         st.session_state.chat_history.append({
@@ -406,6 +405,7 @@ if st.session_state.models_loaded:
 
     def process_generation():
         last_message = st.session_state.chat_history[-1]
+        # This processed_text is the output of Step 2 (Spelling Correction)
         processed_message = last_message.get("processed_content", last_message["content"])
 
         with st.chat_message("assistant", avatar="🤖"):
