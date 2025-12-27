@@ -2,13 +2,12 @@ import streamlit as st
 import torch
 from transformers import (
     GPT2Tokenizer, GPT2LMHeadModel,
-    AutoTokenizer, AutoModelForSequenceClassification
+    AutoTokenizer, AutoModelForSequenceClassification,
+    pipeline
 )
 from gliner import GLiNER
-from symspellpy import SymSpell, Verbosity
 import time
 import random
-import pkg_resources
 
 # =============================
 # MODEL AND CONFIGURATION SETUP
@@ -17,6 +16,7 @@ import pkg_resources
 # Hugging Face model IDs
 DistilGPT2_MODEL_ID = "IamPradeep/AETCSCB_OOD_IC_DistilGPT2_Fine-tuned"
 CLASSIFIER_ID = "IamPradeep/Query_Classifier_DistilBERT"
+SPELL_CORRECTOR_ID = "oliverguhr/spelling-correction-english-base"
 
 # Random OOD Fallback Responses
 fallback_responses = [
@@ -57,13 +57,9 @@ fallback_responses = [
 # =============================
 
 @st.cache_resource
-def load_symspell_model():
-    sym_spell = SymSpell(max_dictionary_edit_distance=2, prefix_length=7)
-    dictionary_path = pkg_resources.resource_filename(
-        "symspellpy", "frequency_dictionary_en_82_765.txt"
-    )
-    sym_spell.load_dictionary(dictionary_path, term_index=0, count_index=1)
-    return sym_spell
+def load_spell_corrector():
+    spell_corrector = pipeline("text2text-generation", model=SPELL_CORRECTOR_ID)
+    return spell_corrector
 
 @st.cache_resource
 def load_gliner_model():
@@ -90,20 +86,19 @@ def load_classifier_model():
         st.error(f"Failed to load classifier model from Hugging Face Hub. Error: {e}")
         return None, None
 
-def correct_spelling(text: str, sym_spell) -> str:
-    """Correct spelling errors using SymSpell"""
-    suggestions = sym_spell.lookup_compound(text, max_edit_distance=2, transfer_casing=True)
-    
-    if suggestions:
-        return suggestions[0].term
+def correct_spelling(text: str, spell_corrector) -> str:
+    """Correct spelling errors using the transformer-based spelling correction model"""
+    corrected = spell_corrector(text, max_length=128)
+    if corrected:
+        return corrected[0]['generated_text']
     return text
 
-def preprocess_query(query: str, sym_spell) -> str:
+def preprocess_query(query: str, spell_corrector) -> str:
     """Normalize query - correct spelling, first letter capital, rest lowercase"""
     query = query.strip()
     if len(query) > 0:
-        # First correct spelling using SymSpell
-        query = correct_spelling(query, sym_spell)
+        # First correct spelling using the spell corrector model
+        query = correct_spelling(query, spell_corrector)
         # Then normalize case
         query = query[0].upper() + query[1:].lower()
     return query
@@ -219,7 +214,8 @@ def extract_dynamic_placeholders(user_question, gliner_model):
         if ent["label"] == "event":
             dynamic_placeholders['{{EVENT}}'] = f"<b>{ent['text'].title()}</b>"
         elif ent["label"] in ["city", "location", "venue"]:
-            dynamic_placeholders['{{CITY}}'] = f"<b>{ent['text'].title()}</b>"
+            # Keep the extracted text as-is without modifying the case
+            dynamic_placeholders['{{CITY}}'] = f"<b>{ent['text']}</b>"
     
     return dynamic_placeholders
 
@@ -333,14 +329,14 @@ example_queries = [
 if not st.session_state.models_loaded:
     with st.spinner("Loading models and resources... Please wait..."):
         try:
-            sym_spell = load_symspell_model()
+            spell_corrector = load_spell_corrector()
             gliner_model = load_gliner_model()
             gpt2_model, gpt2_tokenizer = load_gpt2_model_and_tokenizer()
             clf_model, clf_tokenizer = load_classifier_model()
 
-            if all([sym_spell, gliner_model, gpt2_model, gpt2_tokenizer, clf_model, clf_tokenizer]):
+            if all([spell_corrector, gliner_model, gpt2_model, gpt2_tokenizer, clf_model, clf_tokenizer]):
                 st.session_state.models_loaded = True
-                st.session_state.sym_spell = sym_spell
+                st.session_state.spell_corrector = spell_corrector
                 st.session_state.gliner_model = gliner_model
                 st.session_state.model = gpt2_model
                 st.session_state.tokenizer = gpt2_tokenizer
@@ -370,7 +366,7 @@ if st.session_state.models_loaded:
         disabled=st.session_state.generating
     )
 
-    sym_spell = st.session_state.sym_spell
+    spell_corrector = st.session_state.spell_corrector
     gliner_model = st.session_state.gliner_model
     model = st.session_state.model
     tokenizer = st.session_state.tokenizer
@@ -394,7 +390,7 @@ if st.session_state.models_loaded:
         st.session_state.generating = True
 
         original_text = prompt_text
-        processed_text = preprocess_query(prompt_text, sym_spell)
+        processed_text = preprocess_query(prompt_text, spell_corrector)
         
         st.session_state.chat_history.append({
             "role": "user", 
