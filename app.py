@@ -206,7 +206,7 @@ def replace_placeholders(response, dynamic_placeholders, static_placeholders):
 
 def extract_dynamic_placeholders(user_question, gliner_model):
     labels = ["event", "city", "location", "venue"]
-    entities = gliner_model.predict_entities(user_question, labels, threshold=0.4)
+    entities = gliner_model.predict_entities(user_question, labels, threshold=0.5)
     
     dynamic_placeholders = {'{{EVENT}}': "event", '{{CITY}}': "city"}
     
