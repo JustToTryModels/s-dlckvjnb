@@ -57,8 +57,8 @@ fallback_responses = [
 
 @st.cache_resource
 def load_spell_corrector():
-    """Load the Hugging Face spelling correction pipeline"""
-    return pipeline("text2text-generation", model="oliverguhr/spelling-correction-english-base")
+    model = pipeline("text2text-generation", model="oliverguhr/spelling-correction-english-base")
+    return model
 
 @st.cache_resource
 def load_gliner_model():
@@ -85,14 +85,21 @@ def load_classifier_model():
         st.error(f"Failed to load classifier model from Hugging Face Hub. Error: {e}")
         return None, None
 
+def correct_spelling(text: str, spell_corrector) -> str:
+    """Correct spelling errors using Hugging Face pipeline"""
+    results = spell_corrector(text, max_length=128)
+    if results and len(results) > 0:
+        return results[0]['generated_text']
+    return text
+
 def preprocess_query(query: str, spell_corrector) -> str:
-    """Normalize query - correct spelling using HF pipeline"""
+    """Normalize query - correct spelling, first letter capital, rest lowercase"""
     query = query.strip()
     if len(query) > 0:
-        # Correct spelling using the text2text-generation model
-        corrected = spell_corrector(query, max_length=128)
-        if corrected:
-            query = corrected[0]['generated_text']
+        # First correct spelling using the HF pipeline
+        query = correct_spelling(query, spell_corrector)
+        # Then normalize case
+        query = query[0].upper() + query[1:].lower()
     return query
 
 def is_ood(query: str, model, tokenizer):
@@ -206,7 +213,7 @@ def extract_dynamic_placeholders(user_question, gliner_model):
         if ent["label"] == "event":
             dynamic_placeholders['{{EVENT}}'] = f"<b>{ent['text'].title()}</b>"
         elif ent["label"] in ["city", "location", "venue"]:
-            # {{CITY}} value kept as extracted by GLiNER, no title casing applied
+            # Fixed: Removed .title() to keep City/Location/Venue as extracted by GLiNER
             dynamic_placeholders['{{CITY}}'] = f"<b>{ent['text']}</b>"
     
     return dynamic_placeholders
