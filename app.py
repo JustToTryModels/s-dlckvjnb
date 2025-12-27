@@ -201,7 +201,7 @@ def replace_placeholders(response, dynamic_placeholders, static_placeholders):
     return response
 
 def extract_dynamic_placeholders(user_question, gliner_model):
-    labels = ["event", "city", "location", "venue"]
+    labels = ["event", "City", "Location", "Venue", "State", "Region", "Continent", "country", "Province"]
     # user_question is the spelling-corrected output from the pipeline
     entities = gliner_model.predict_entities(user_question, labels, threshold=0.4)
     
@@ -211,7 +211,7 @@ def extract_dynamic_placeholders(user_question, gliner_model):
         if ent["label"] == "event":
             # Apply .title() to Event
             dynamic_placeholders['{{EVENT}}'] = f"<b>{ent['text'].title()}</b>"
-        elif ent["label"] in ["city", "location", "venue"]:
+        elif ent["label"] in ["City", "Location", "Venue", "State", "Region", "Continent", "country", "Province"]:
             # Keep City as extracted (no .title())
             dynamic_placeholders['{{CITY}}'] = f"<b>{ent['text']}</b>"
     
