@@ -86,21 +86,26 @@ def load_classifier_model():
         st.error(f"Failed to load classifier model from Hugging Face Hub. Error: {e}")
         return None, None
 
+def adjust_case(text: str) -> str:
+    """Normalize query - first letter capital, rest lowercase"""
+    text = text.strip()
+    if len(text) > 0:
+        text = text[0].upper() + text[1:].lower()
+    return text
+
 def correct_spelling(text: str, spell_corrector) -> str:
-    """Correct spelling errors using the transformer-based spelling correction model"""
+    """Correct spelling errors using the transformer model"""
     corrected = spell_corrector(text, max_length=128)
     if corrected:
         return corrected[0]['generated_text']
     return text
 
 def preprocess_query(query: str, spell_corrector) -> str:
-    """Normalize query - correct spelling, first letter capital, rest lowercase"""
-    query = query.strip()
-    if len(query) > 0:
-        # First correct spelling using the spell corrector model
-        query = correct_spelling(query, spell_corrector)
-        # Then normalize case
-        query = query[0].upper() + query[1:].lower()
+    """Normalize query - adjust case first, then correct spelling"""
+    # Step 1: Adjust case (first letter capital, rest lowercase)
+    query = adjust_case(query)
+    # Step 2: Correct spelling using the transformer model
+    query = correct_spelling(query, spell_corrector)
     return query
 
 def is_ood(query: str, model, tokenizer):
@@ -206,16 +211,17 @@ def replace_placeholders(response, dynamic_placeholders, static_placeholders):
 
 def extract_dynamic_placeholders(user_question, gliner_model):
     labels = ["event", "city", "location", "venue"]
-    entities = gliner_model.predict_entities(user_question, labels, threshold=0.5)
+    entities = gliner_model.predict_entities(user_question, labels, threshold=0.4)
     
     dynamic_placeholders = {'{{EVENT}}': "event", '{{CITY}}': "city"}
     
     for ent in entities:
         if ent["label"] == "event":
-            dynamic_placeholders['{{EVENT}}'] = f"<b>{ent['text'].title()}</b>"
+            # Keep event name as-is from GLiNER extraction (no case adjustment)
+            dynamic_placeholders['{{EVENT}}'] = f"<b>{ent['text']}</b>"
         elif ent["label"] in ["city", "location", "venue"]:
-            # Keep the extracted text as-is without modifying the case
-            dynamic_placeholders['{{CITY}}'] = f"<b>{ent['text']}</b>"
+            # Apply title case only for city/location/venue
+            dynamic_placeholders['{{CITY}}'] = f"<b>{ent['text'].title()}</b>"
     
     return dynamic_placeholders
 
@@ -390,6 +396,7 @@ if st.session_state.models_loaded:
         st.session_state.generating = True
 
         original_text = prompt_text
+        # Step 1: Adjust case first, then correct spelling
         processed_text = preprocess_query(prompt_text, spell_corrector)
         
         st.session_state.chat_history.append({
@@ -410,10 +417,14 @@ if st.session_state.models_loaded:
             message_placeholder = st.empty()
             full_response = ""
 
+            # Step 3: Check if query is OOD using the spelling-corrected query
             if is_ood(processed_message, clf_model, clf_tokenizer):
+                # Step 4: If OOD, provide fallback response
                 full_response = random.choice(fallback_responses)
             else:
+                # Step 4: If in-domain, generate response
                 with st.spinner("Generating response..."):
+                    # Extract entities from the spelling-corrected query
                     dynamic_placeholders = extract_dynamic_placeholders(processed_message, gliner_model)
                     response_gpt = generate_response(model, tokenizer, processed_message)
                     full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
