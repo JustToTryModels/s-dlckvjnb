@@ -61,6 +61,11 @@ def load_spell_corrector():
     return model
 
 @st.cache_resource
+def load_spell_corrector_tokenizer():
+    tokenizer = AutoTokenizer.from_pretrained("oliverguhr/spelling-correction-english-base")
+    return tokenizer
+
+@st.cache_resource
 def load_gliner_model():
     model = GLiNER.from_pretrained("gliner-community/gliner_small-v2.5")
     return model
@@ -85,19 +90,46 @@ def load_classifier_model():
         st.error(f"Failed to load classifier model from Hugging Face Hub. Error: {e}")
         return None, None
 
-def preprocess_query(query: str, spell_corrector) -> str:
-    """Normalize query - adjust casing first, then correct spelling"""
+def preprocess_query(query: str, spell_corrector, spell_tokenizer, max_tokens: int = 256):
+    """
+    Normalize query - adjust casing first, then correct spelling.
+    
+    Returns:
+        tuple: (processed_query, error_message)
+        - If successful: (processed_query, None)
+        - If too long: (None, error_message)
+    """
     query = query.strip()
-    if len(query) > 0:
-        # 1. Adjust casing: only first letter capital, rest small
-        query = query[0].upper() + query[1:].lower()
-        
-        # 2. Send to spelling corrector
-        results = spell_corrector(query, max_length=128)
+    
+    if len(query) == 0:
+        return query, None
+    
+    # 1. Adjust casing: only first letter capital, rest small
+    query = query[0].upper() + query[1:].lower()
+    
+    # 2. Count tokens using the spell corrector's tokenizer
+    tokens = spell_tokenizer.encode(query, add_special_tokens=True)
+    token_count = len(tokens)
+    
+    if token_count > max_tokens:
+        error_msg = (
+            f"⚠️ Your query is too long ({token_count} tokens). "
+            f"Please keep it under {max_tokens} tokens for best results. "
+            f"Try to make your question more concise."
+        )
+        return None, error_msg
+    
+    # 3. Send to spelling corrector
+    try:
+        results = spell_corrector(query, max_length=max_tokens)
         if results and len(results) > 0:
-            query = results[0]['generated_text'].strip()
-            
-    return query
+            corrected = results[0].get('generated_text', '').strip()
+            if corrected:
+                query = corrected
+    except Exception as e:
+        print(f"Spell correction error: {e}")
+    
+    return query, None
 
 def is_ood(query: str, model, tokenizer):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -202,17 +234,14 @@ def replace_placeholders(response, dynamic_placeholders, static_placeholders):
 
 def extract_dynamic_placeholders(user_question, gliner_model):
     labels = ["event", "city", "location", "venue"]
-    # user_question is the spelling-corrected output from the pipeline
     entities = gliner_model.predict_entities(user_question, labels, threshold=0.4)
     
     dynamic_placeholders = {'{{EVENT}}': "event", '{{CITY}}': "city"}
     
     for ent in entities:
         if ent["label"] == "event":
-            # Apply .title() to Event
             dynamic_placeholders['{{EVENT}}'] = f"<b>{ent['text'].title()}</b>"
         elif ent["label"] in ["city", "location", "venue"]:
-            # Keep City as extracted (no .title())
             dynamic_placeholders['{{CITY}}'] = f"<b>{ent['text']}</b>"
     
     return dynamic_placeholders
@@ -328,13 +357,15 @@ if not st.session_state.models_loaded:
     with st.spinner("Loading models and resources... Please wait..."):
         try:
             spell_corrector = load_spell_corrector()
+            spell_tokenizer = load_spell_corrector_tokenizer()
             gliner_model = load_gliner_model()
             gpt2_model, gpt2_tokenizer = load_gpt2_model_and_tokenizer()
             clf_model, clf_tokenizer = load_classifier_model()
 
-            if all([spell_corrector, gliner_model, gpt2_model, gpt2_tokenizer, clf_model, clf_tokenizer]):
+            if all([spell_corrector, spell_tokenizer, gliner_model, gpt2_model, gpt2_tokenizer, clf_model, clf_tokenizer]):
                 st.session_state.models_loaded = True
                 st.session_state.spell_corrector = spell_corrector
+                st.session_state.spell_tokenizer = spell_tokenizer
                 st.session_state.gliner_model = gliner_model
                 st.session_state.model = gpt2_model
                 st.session_state.tokenizer = gpt2_tokenizer
@@ -365,6 +396,7 @@ if st.session_state.models_loaded:
     )
 
     spell_corrector = st.session_state.spell_corrector
+    spell_tokenizer = st.session_state.spell_tokenizer
     gliner_model = st.session_state.gliner_model
     model = st.session_state.model
     tokenizer = st.session_state.tokenizer
@@ -385,14 +417,36 @@ if st.session_state.models_loaded:
             st.toast("⚠️ Please enter or select a question.")
             return
 
+        original_text = prompt_text
+        
+        # Preprocess and check token length
+        processed_text, error_message = preprocess_query(
+            prompt_text, 
+            spell_corrector, 
+            spell_tokenizer,
+            max_tokens=256
+        )
+        
+        # If query is too long, add the error message as a response
+        if error_message:
+            st.session_state.generating = True
+            st.session_state.chat_history.append({
+                "role": "user", 
+                "content": original_text,
+                "processed_content": None,
+                "avatar": "👤"
+            })
+            st.session_state.chat_history.append({
+                "role": "assistant", 
+                "content": error_message,
+                "avatar": "🤖"
+            })
+            st.session_state.generating = False
+            st.rerun()
+            return
+
         st.session_state.generating = True
 
-        original_text = prompt_text
-        # The preprocess_query function now implements the required pipeline:
-        # 1. Adjust casing (First Upper, rest lower)
-        # 2. Spelling correction
-        processed_text = preprocess_query(prompt_text, spell_corrector)
-        
         st.session_state.chat_history.append({
             "role": "user", 
             "content": original_text,
@@ -405,22 +459,24 @@ if st.session_state.models_loaded:
 
     def process_generation():
         last_message = st.session_state.chat_history[-1]
-        # This processed_text is the output of Step 2 (Spelling Correction)
         processed_message = last_message.get("processed_content", last_message["content"])
+        
+        # Skip generation if processed_content is None (error case already handled)
+        if processed_message is None:
+            st.session_state.generating = False
+            return
 
         with st.chat_message("assistant", avatar="🤖"):
             message_placeholder = st.empty()
             full_response = ""
 
-            # Step 3: Check OOD using the DistilBERT Classifier
+            # Check OOD using the DistilBERT Classifier
             if is_ood(processed_message, clf_model, clf_tokenizer):
                 full_response = random.choice(fallback_responses)
             else:
-                # Step 3 (Cont): If In-Domain, send to DistilGPT2 and GLiNER
+                # If In-Domain, send to DistilGPT2 and GLiNER
                 with st.spinner("Generating response..."):
-                    # Extract entities using GLiNER on the processed text
                     dynamic_placeholders = extract_dynamic_placeholders(processed_message, gliner_model)
-                    # Generate response using DistilGPT2 on the processed text
                     response_gpt = generate_response(model, tokenizer, processed_message)
                     full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
 
