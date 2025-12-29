@@ -57,19 +57,23 @@ fallback_responses = [
 
 @st.cache_resource
 def load_spell_corrector():
-    model = pipeline("text2text-generation", model="oliverguhr/spelling-correction-english-base")
+    device = 0 if torch.cuda.is_available() else -1
+    model = pipeline("text2text-generation", model="oliverguhr/spelling-correction-english-base", device=device)
     return model
 
 @st.cache_resource
 def load_gliner_model():
+    # GLiNER handles device mapping internally if possible
     model = GLiNER.from_pretrained("gliner-community/gliner_small-v2.5")
     return model
 
 @st.cache_resource(show_spinner=False)
 def load_gpt2_model_and_tokenizer():
     try:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model = GPT2LMHeadModel.from_pretrained(DistilGPT2_MODEL_ID, trust_remote_code=True)
         tokenizer = GPT2Tokenizer.from_pretrained(DistilGPT2_MODEL_ID)
+        model.to(device) # Move to device ONCE during load
         return model, tokenizer
     except Exception as e:
         st.error(f"Failed to load GPT-2 model from Hugging Face Hub. Error: {e}")
@@ -78,39 +82,25 @@ def load_gpt2_model_and_tokenizer():
 @st.cache_resource(show_spinner=False)
 def load_classifier_model():
     try:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         tokenizer = AutoTokenizer.from_pretrained(CLASSIFIER_ID)
         model = AutoModelForSequenceClassification.from_pretrained(CLASSIFIER_ID)
+        model.to(device) # Move to device ONCE during load
         return model, tokenizer
     except Exception as e:
         st.error(f"Failed to load classifier model from Hugging Face Hub. Error: {e}")
         return None, None
 
 def preprocess_query(query: str, spell_corrector, query_tokenizer, max_tokens: int = 128):
-    """
-    Normalize query - adjust casing first, then correct spelling.
-    
-    Returns:
-        tuple: (processed_query, error_message)
-        - If successful: (processed_query, None)
-        - If too long: (None, error_message)
-    """
     query = query.strip()
-    
     if len(query) == 0:
         return query, None
-    
-    # 1. Adjust casing: only first letter capital, rest small
     query = query[0].upper() + query[1:].lower()
-    
-    # 2. Count tokens using the DistilGPT2 tokenizer
     tokens = query_tokenizer.encode(query, add_special_tokens=True)
     token_count = len(tokens)
-    
     if token_count > max_tokens:
         error_msg = "⚠️ Your question is too long. Try something shorter like: <b>'How do I get a refund?'</b>"
         return None, error_msg
-    
-    # 3. Send to spelling corrector
     try:
         results = spell_corrector(query, max_length=256)
         if results and len(results) > 0:
@@ -119,12 +109,11 @@ def preprocess_query(query: str, spell_corrector, query_tokenizer, max_tokens: i
                 query = corrected
     except Exception as e:
         print(f"Spell correction error: {e}")
-    
     return query, None
 
 def is_ood(query: str, model, tokenizer):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
+    # Detect which device the model is already on
+    device = next(model.parameters()).device
     model.eval()
     
     inputs = tokenizer(query, return_tensors="pt", truncation=True, padding=True, max_length=256)
@@ -132,7 +121,7 @@ def is_ood(query: str, model, tokenizer):
     with torch.no_grad():
         outputs = model(**inputs)
     pred_id = torch.argmax(outputs.logits, dim=1).item()
-    return pred_id == 1  # True if OOD (label 1)
+    return pred_id == 1 
 
 # =============================
 # ORIGINAL HELPER FUNCTIONS
@@ -239,8 +228,8 @@ def extract_dynamic_placeholders(user_question, gliner_model):
 
 def generate_response(model, tokenizer, instruction, max_length=256):
     model.eval()
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
+    # Detect which device the model is already on
+    device = next(model.parameters()).device
     input_text = f"Instruction: {instruction} Response:"
     inputs = tokenizer(input_text, return_tensors="pt", padding=True).to(device)
     with torch.no_grad():
