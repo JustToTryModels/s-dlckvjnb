@@ -213,13 +213,13 @@ def replace_placeholders(response, dynamic_placeholders, static_placeholders):
     return response
 
 def extract_dynamic_placeholders(user_question, gliner_model):
-    labels = ["event", "city", "location", "venue"]
+    labels = ["event", "city", "location", "concert", "festival", "show", "match", "game"]
     entities = gliner_model.predict_entities(user_question, labels, threshold=0.4)
     
     dynamic_placeholders = {'{{EVENT}}': "event", '{{CITY}}': "city"}
     
     for ent in entities:
-        if ent["label"] == "event":
+        if ent["label"] in ["event", "concert", "festival", "show", "match", "game"]:
             dynamic_placeholders['{{EVENT}}'] = f"<b>{ent['text'].title()}</b>"
         elif ent["label"] in ["city", "location", "venue"]:
             dynamic_placeholders['{{CITY}}'] = f"<b>{ent['text']}</b>"
