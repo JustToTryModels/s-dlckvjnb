@@ -107,11 +107,7 @@ def preprocess_query(query: str, spell_corrector, query_tokenizer, max_tokens: i
     token_count = len(tokens)
     
     if token_count > max_tokens:
-        error_msg = (
-            f"⚠️ Your query is too long ({token_count} tokens). "
-            f"Please keep it under {max_tokens} tokens for best results. "
-            f"Try to make your question more concise."
-        )
+        error_msg = "⚠️ Your question is too long. Try something shorter like: <b>'How do I get a refund?'</b>"
         return None, error_msg
     
     # 3. Send to spelling corrector
