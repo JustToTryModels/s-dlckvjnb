@@ -2,5 +2,4 @@ streamlit==1.32.0
 gliner==0.2.7
 torch
 transformers>=4.30.0
-#symspellpy>=6.7.0
 sentencepiece
