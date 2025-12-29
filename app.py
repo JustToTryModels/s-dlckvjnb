@@ -61,11 +61,6 @@ def load_spell_corrector():
     return model
 
 @st.cache_resource
-def load_spell_corrector_tokenizer():
-    tokenizer = AutoTokenizer.from_pretrained("oliverguhr/spelling-correction-english-base")
-    return tokenizer
-
-@st.cache_resource
 def load_gliner_model():
     model = GLiNER.from_pretrained("gliner-community/gliner_small-v2.5")
     return model
@@ -90,7 +85,7 @@ def load_classifier_model():
         st.error(f"Failed to load classifier model from Hugging Face Hub. Error: {e}")
         return None, None
 
-def preprocess_query(query: str, spell_corrector, spell_tokenizer, max_tokens: int = 256):
+def preprocess_query(query: str, spell_corrector, query_tokenizer, max_tokens: int = 128):
     """
     Normalize query - adjust casing first, then correct spelling.
     
@@ -107,8 +102,8 @@ def preprocess_query(query: str, spell_corrector, spell_tokenizer, max_tokens: i
     # 1. Adjust casing: only first letter capital, rest small
     query = query[0].upper() + query[1:].lower()
     
-    # 2. Count tokens using the spell corrector's tokenizer
-    tokens = spell_tokenizer.encode(query, add_special_tokens=True)
+    # 2. Count tokens using the DistilGPT2 tokenizer
+    tokens = query_tokenizer.encode(query, add_special_tokens=True)
     token_count = len(tokens)
     
     if token_count > max_tokens:
@@ -121,7 +116,7 @@ def preprocess_query(query: str, spell_corrector, spell_tokenizer, max_tokens: i
     
     # 3. Send to spelling corrector
     try:
-        results = spell_corrector(query, max_length=max_tokens)
+        results = spell_corrector(query, max_length=256)
         if results and len(results) > 0:
             corrected = results[0].get('generated_text', '').strip()
             if corrected:
@@ -357,15 +352,13 @@ if not st.session_state.models_loaded:
     with st.spinner("Loading models and resources... Please wait..."):
         try:
             spell_corrector = load_spell_corrector()
-            spell_tokenizer = load_spell_corrector_tokenizer()
             gliner_model = load_gliner_model()
             gpt2_model, gpt2_tokenizer = load_gpt2_model_and_tokenizer()
             clf_model, clf_tokenizer = load_classifier_model()
 
-            if all([spell_corrector, spell_tokenizer, gliner_model, gpt2_model, gpt2_tokenizer, clf_model, clf_tokenizer]):
+            if all([spell_corrector, gliner_model, gpt2_model, gpt2_tokenizer, clf_model, clf_tokenizer]):
                 st.session_state.models_loaded = True
                 st.session_state.spell_corrector = spell_corrector
-                st.session_state.spell_tokenizer = spell_tokenizer
                 st.session_state.gliner_model = gliner_model
                 st.session_state.model = gpt2_model
                 st.session_state.tokenizer = gpt2_tokenizer
@@ -396,7 +389,6 @@ if st.session_state.models_loaded:
     )
 
     spell_corrector = st.session_state.spell_corrector
-    spell_tokenizer = st.session_state.spell_tokenizer
     gliner_model = st.session_state.gliner_model
     model = st.session_state.model
     tokenizer = st.session_state.tokenizer
@@ -419,12 +411,12 @@ if st.session_state.models_loaded:
 
         original_text = prompt_text
         
-        # Preprocess and check token length
+        # Preprocess and check token length using DistilGPT2 tokenizer
         processed_text, error_message = preprocess_query(
             prompt_text, 
             spell_corrector, 
-            spell_tokenizer,
-            max_tokens=256
+            tokenizer,
+            max_tokens=128
         )
         
         # If query is too long, add the error message as a response
