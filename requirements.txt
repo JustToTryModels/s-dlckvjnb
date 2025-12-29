@@ -1,4 +1,4 @@
-streamlit==1.32.0
+streamlit==1.52.2
 gliner==0.2.7
 torch
 transformers>=4.30.0
