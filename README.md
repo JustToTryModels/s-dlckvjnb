@@ -400,8 +400,8 @@ Training Loss Over Epochs:
 
 ```bash
 # Clone the repository
-git clone https://github.com/MarpakaPradeepSai/Advanced-Event-Ticketing-Chatbot.git
-cd Advanced-Event-Ticketing-Chatbot
+git clone https://github.com/MarpakaPradeepSai/Advanced-Event-Ticketing-Customer-Support-Chatbot.git
+cd Advanced-Event-Ticketing-Customer-Support-Chatbot
 
 # Create virtual environment
 python -m venv venv
@@ -432,7 +432,7 @@ The following models are automatically downloaded from Hugging Face Hub on first
 |-------|--------|------|
 | Spell Corrector | `oliverguhr/spelling-correction-english-base` | ~250MB |
 | GLiNER | `gliner-community/gliner_small-v2.5` | ~100MB |
-| DistilGPT2 (Fine-tuned) | `IamPradeep/AETCSCB_OOD_IC_DistilGPT2_Fine-tuned` | ~350MB |
+| DistilGPT2 (Fine-tuned) | `IamPradeep/AETCSCB_OOD_IC_DistilGPT2_Fine-tuned` | ~330MB |
 | DistilBERT Classifier | `IamPradeep/Query_Classifier_DistilBERT` | ~270MB |
 
 ---
@@ -689,7 +689,7 @@ def compute_metrics(eval_pred):
 ## 📁 Project Structure
 
 ```
-Advanced-Event-Ticketing-Chatbot/
+Advanced-Event-Ticketing-Customer-Support-Chatbot/
 │
 ├── Data/                       # 1. Dataset Repository
 │   ├── Bitext-events-ticketing-llm-chatbot-training-dataset.csv   # Response generation data
