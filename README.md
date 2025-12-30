@@ -5,16 +5,15 @@
 ![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)
 ![Transformers](https://img.shields.io/badge/🤗_Transformers-4.30+-yellow?style=for-the-badge)
-![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
-![spaCy](https://img.shields.io/badge/spaCy-3.0+-09A3D5?style=for-the-badge&logo=spacy&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-1.52+-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
+![GLiNER](https://img.shields.io/badge/GLiNER-0.2.7-purple?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
-<h3>🚀 An intelligent, domain-specific chatbot powered by fine-tuned transformer models for seamless event ticketing support</h3>
+<h3>🚀 An intelligent, domain-specific chatbot powered by fine-tuned transformer models with advanced NER and spell correction for seamless event ticketing support</h3>
 
 [Live Demo](https://advanced-event-ticketing-customer-support-chatbot.streamlit.app/) • [DistilGPT2 Model](https://huggingface.co/IamPradeep/AETCSCB_OOD_IC_DistilGPT2_Fine-tuned) • [Classifier Model](https://huggingface.co/IamPradeep/Query_Classifier_DistilBERT)
 
-<img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Ticket.png" alt="Ticket" width="150" />
-
+<img src="https://github.com/MarpakaPradeepSai/Advanced-Event-Ticketing-Customer-Support-Chatbot/blob/main/Data/Images%20&%20GIFs/In-Domain%20Respose%20GIF.gif?raw=true" alt="Ticket" width="650" />
 </div>
 
 ---
@@ -31,8 +30,6 @@
 - [Performance Metrics](#-performance-metrics)
 - [Demo](#-demo)
 - [Project Structure](#-project-structure)
-- [Future Enhancements](#-future-enhancements)
-- [Contributing](#-contributing)
 - [License](#-license)
 - [Acknowledgments](#-acknowledgments)
 
@@ -40,24 +37,11 @@
 
 ## 🌟 Overview
 
-The **Advanced Event Ticketing Customer Support Chatbot** is a sophisticated AI-powered solution designed to handle customer inquiries related to event ticketing. Built with a multi-model architecture, this system intelligently routes queries through a classification pipeline and generates contextually relevant, professional responses.
+The **Advanced Event Ticketing Customer Support Chatbot** is a sophisticated AI-powered solution designed to handle customer inquiries related to event ticketing. Built with a multi-model architecture, this system features **query validation**, **spell correction**, **intelligent query classification**, **advanced entity extraction with GLiNER**, and **contextually relevant response generation**.
 
 ### 🎯 What Makes This Special?
 
-```
-┌───────────────────────────────────────────────────────────────────────────────┐
-│                                                                               │
-│   User Query ──▶ OOD Classifier ──▶ In-Domain ──▶ DistilGPT2 ──▶ Response   │
-│                       │                                    │                  │
-│                       ▼                                    ▼                  │
-│                   Out-of-Domain                      NER Processing           │
-│                       │                                    │                  │
-│                       ▼                                    ▼                  │
-│                 Polite Rejection                    Dynamic Placeholder       │
-│                   Response                              Replacement           │
-│                                                                               │
-└───────────────────────────────────────────────────────────────────────────────┘
-```
+This system employs a rigorous 5-step processing pipeline to ensure accurate and efficient responses. By validating inputs early and leveraging NLP models like **DistilGPT2** and **GLiNER**, it achieves high accuracy while gracefully handling out-of-domain queries and spelling errors.
 
 ---
 
@@ -85,10 +69,30 @@ The **Advanced Event Ticketing Customer Support Chatbot** is a sophisticated AI-
 <tr>
 <td width="50%">
 
-### 🏷️ Named Entity Recognition
-- **spaCy transformer model** for entity extraction
-- Automatic detection of events and locations
-- Dynamic placeholder replacement
+### 🏷️ Advanced Named Entity Recognition
+- **GLiNER model** for zero-shot entity extraction
+- Automatic detection of events, cities, locations, and venues
+- Dynamic placeholder replacement with confidence thresholds
+
+</td>
+<td width="50%">
+
+### 📏 Query Length Validation
+- **First check** before any processing
+- Automatic query length checking (max 128 tokens)
+- User-friendly error messages for oversized queries
+- Prevents unnecessary computation on invalid queries
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### ✏️ Automatic Spell Correction
+- **T5-based spell corrector** for input preprocessing
+- Applied only after query validation passes
+- Handles typos and misspellings seamlessly
+- Improves query understanding accuracy
 
 </td>
 <td width="50%">
@@ -97,6 +101,7 @@ The **Advanced Event Ticketing Customer Support Chatbot** is a sophisticated AI-
 - **Streamlit-powered interface**
 - Chat-style conversation flow
 - Example queries for quick start
+- Elegant Tiempos font styling
 
 </td>
 </tr>
@@ -108,30 +113,39 @@ The **Advanced Event Ticketing Customer Support Chatbot** is a sophisticated AI-
 
 ```mermaid
 graph TB
-    A[👤 User Input] --> B{🔍 DistilBERT Classifier}
-    B -->|Out-of-Domain| C[🚫 Polite Fallback Response]
-    B -->|In-Domain| D[🏷️ spaCy NER Processing]
-    D --> E[🤖 DistilGPT2 Response Generation]
-    E --> F[🔄 Placeholder Replacement]
-    F --> G[💬 Final Response]
-    C --> G
+    A[👤 User Input] --> B{📏 Query Length Check}
+    B -->|Too Long| C[⚠️ Error Message]
+    B -->|OK| D[✏️ Spell Corrector]
+    D --> E{🔍 DistilBERT Classifier}
+    E -->|Out-of-Domain| F[🚫 Polite Fallback Response]
+    E -->|In-Domain| G[🏷️ GLiNER NER Processing]
+    G --> H[🤖 DistilGPT2 Response Generation]
+    H --> I[🔄 Placeholder Replacement]
+    I --> J[💬 Final Response]
+    C --> J
+    F --> J
     
     style A fill:#e1f5fe
-    style B fill:#fff3e0
-    style C fill:#ffebee
-    style D fill:#f3e5f5
-    style E fill:#e8f5e9
-    style F fill:#fce4ec
-    style G fill:#e0f2f1
+    style B fill:#f3e5f5
+    style C fill:#ffcdd2
+    style D fill:#fff9c4
+    style E fill:#fff3e0
+    style F fill:#ffebee
+    style G fill:#e8eaf6
+    style H fill:#e8f5e9
+    style I fill:#fce4ec
+    style J fill:#e0f2f1
 ```
 
 ### Component Breakdown
 
 | Component | Model/Technology | Purpose |
 |-----------|-----------------|---------|
+| **Query Validator** | DistilGPT2 Tokenizer | Query length validation (max 128 tokens) |
+| **Spell Corrector** | oliverguhr/spelling-correction-english-base | Input text correction and normalization |
 | **Query Classifier** | DistilBERT (fine-tuned) | Binary classification for OOD detection |
 | **Response Generator** | DistilGPT2 (fine-tuned) | Domain-specific response generation |
-| **Entity Extractor** | spaCy (en_core_web_trf) | Extract events, locations from queries |
+| **Entity Extractor** | GLiNER (gliner_small-v2.5) | Zero-shot entity extraction for events/locations |
 | **Frontend** | Streamlit | Interactive web interface |
 | **Deployment** | Streamlit Cloud | Cloud hosting |
 
@@ -139,7 +153,88 @@ graph TB
 
 ## 🤖 Model Details
 
-### 1️⃣ Response Generator: DistilGPT2
+### 1️⃣ Query Length Validator
+
+<details>
+<summary><b>Click to expand details</b></summary>
+
+**Tokenizer:** DistilGPT2 Tokenizer (same as response generator)
+
+**Purpose:** Validates query length before any processing to ensure efficient resource usage.
+
+**Configuration:**
+```python
+max_tokens = 128
+tokens = query_tokenizer.encode(query, add_special_tokens=True)
+token_count = len(tokens)
+if token_count > max_tokens:
+    return None, "⚠️ Your question is too long..."
+```
+
+**Benefits:**
+- Prevents unnecessary spell correction on invalid queries
+- Saves computational resources
+- Provides immediate user feedback
+- Ensures model doesn't receive oversized inputs
+
+</details>
+
+### 2️⃣ Spell Corrector: T5-based Model
+
+<details>
+<summary><b>Click to expand details</b></summary>
+
+**Model:** `oliverguhr/spelling-correction-english-base`
+
+**Purpose:** Automatically corrects spelling errors and typos in user queries after query validation.
+
+**Features:**
+- Text-to-text generation pipeline
+- Handles common spelling mistakes
+- Preserves query intent while fixing errors
+- Maximum output length: 256 tokens
+
+**Example:**
+```
+Input:  "How do I cancle my tiket?"
+Output: "How do I cancel my ticket?"
+```
+
+</details>
+
+### 3️⃣ Entity Extractor: GLiNER
+
+<details>
+<summary><b>Click to expand details</b></summary>
+
+**Model:** `gliner-community/gliner_small-v2.5`
+
+**Purpose:** Zero-shot Named Entity Recognition for extracting event-related entities.
+
+**Configuration:**
+```python
+labels = ["event", "city", "location", "concert", "festival", "show", "match", "game", "venue"]
+threshold = 0.4  # Confidence threshold for entity extraction
+```
+
+**Key Features:**
+- Zero-shot capability (no training required for new entity types)
+- Lightweight and fast inference
+- Flexible label definitions
+- Excellent handling of domain-specific entities
+
+**Example:**
+```
+Input:  "How can I upgrade my ticket for the Coldplay concert in Mumbai?"
+Output: {
+    "event": "Coldplay concert",
+    "city": "Mumbai"
+}
+```
+
+</details>
+
+### 4️⃣ Response Generator: DistilGPT2
 
 <details>
 <summary><b>Click to expand training details</b></summary>
@@ -155,6 +250,17 @@ TrainingArguments(
     num_train_epochs=10,
     weight_decay=0.01,
     save_strategy="epoch"
+)
+```
+
+**Generation Parameters:**
+```python
+model.generate(
+    max_length=256,
+    temperature=0.5,
+    top_p=0.95,
+    do_sample=True,
+    pad_token_id=tokenizer.eos_token_id
 )
 ```
 
@@ -175,7 +281,7 @@ TrainingArguments(
 
 </details>
 
-### 2️⃣ Query Classifier: DistilBERT
+### 5️⃣ Query Classifier: DistilBERT
 
 <details>
 <summary><b>Click to expand training details</b></summary>
@@ -239,12 +345,45 @@ Training Loss Over Epochs:
 █ Epoch 3:  ████████████████████████████                  0.1555           █
 █ Epoch 4:  ██████████████████████████                    0.1331           █
 █ Epoch 5:  ████████████████████████                      0.1233           █
-█ Epoch 6:  ██████████████████████                        0.1141           █
+█ Epoch 6:  ██████████████████████████                    0.1141           █
 █ Epoch 7:  ████████████████████                          0.1062           █
 █ Epoch 8:  ██████████████████                            0.0999           █
 █ Epoch 9:  ████████████████                              0.0946           █
 █ Epoch 10: ██████████████                                0.0864           █
 ████████████████████████████████████████████████████████████████████████████
+```
+
+### Pipeline Processing Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     Query Processing Pipeline                           │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  Step 1: Query Length Validation                                        │
+│  ├── Input:  "How do I cancle my tiket for the consert?"                │
+│  ├── Max Tokens: 128                                                    │
+│  └── Status: ✅ PASS (15 tokens)                                       │
+│                                                                         │
+│  Step 2: Spell Correction                                               │
+│  ├── Input:  "How do I cancle my tiket for the consert?"                │
+│  └── Output: "How do I cancel my ticket for the concert?"               │
+│                                                                         │
+│  Step 3: OOD Classification                                             │
+│  ├── Model: DistilBERT                                                  │
+│  └── Result: In-Domain (Label: 0)                                       │
+│                                                                         │
+│  Step 4: Entity Extraction (GLiNER)                                     │
+│  ├── Labels: ["event", "city", "location", "venue"]                     │
+│  └── Entities: {"event": "concert"}                                     │
+│                                                                         │
+│  Step 5: Response Generation (DistilGPT2)                               │
+│  └── Generated with temperature=0.5, top_p=0.95                         │
+│                                                                         │
+│  Step 6: Placeholder Replacement                                        │
+│  └── {{EVENT}} → <b>Concert</b>                                         │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -254,7 +393,7 @@ Training Loss Over Epochs:
 ### Prerequisites
 
 - Python 3.8+
-- CUDA-compatible GPU (recommended for training)
+- CUDA-compatible GPU (recommended for faster inference)
 - 8GB+ RAM
 
 ### Quick Start
@@ -271,24 +410,30 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Download spaCy model
-python -m spacy download en_core_web_trf
-
 # Run the application
 streamlit run app.py
 ```
 
-### Dependencies
+### Requirements
 
 ```txt
-torch>=2.0.0
+streamlit==1.52.2
+gliner==0.2.7
+torch
 transformers>=4.30.0
-streamlit>=1.28.0
-spacy>=3.0.0
-pandas>=1.5.0
-datasets>=2.14.0
-wandb>=0.15.0
+sentencepiece
 ```
+
+### Model Downloads (Automatic)
+
+The following models are automatically downloaded from Hugging Face Hub on first run:
+
+| Model | Source | Size |
+|-------|--------|------|
+| Spell Corrector | `oliverguhr/spelling-correction-english-base` | ~250MB |
+| GLiNER | `gliner-community/gliner_small-v2.5` | ~100MB |
+| DistilGPT2 (Fine-tuned) | `IamPradeep/AETCSCB_OOD_IC_DistilGPT2_Fine-tuned` | ~350MB |
+| DistilBERT Classifier | `IamPradeep/Query_Classifier_DistilBERT` | ~270MB |
 
 ---
 
@@ -311,21 +456,21 @@ streamlit run app.py
 <td>
 
 ```
-How can I cancel my ticket 
-for the upcoming event in Mumbai?
+How can I cancle my tiket 
+for the upcoming event in lundon?
 ```
 
 </td>
 <td>
 
 ```
-To cancel your ticket for the event in Mumbai, 
+To cancel your ticket for the event in London, 
 kindly adhere to the following steps:
 
 1. Access website and log into your account.
 2. Proceed to the Ticket Cancellation section.
 3. Locate your upcoming events and choose 
-   the event in Mumbai.
+   the event in London.
 4. Select the Cancel Ticket option.
 5. Follow the on-screen instructions to 
    confirm your cancellation.
@@ -333,6 +478,7 @@ kindly adhere to the following steps:
 If you face any difficulties, do not hesitate 
 to reach out to our customer support team.
 ```
+*(Note: Typos "cancle", "tiket", "lundon" auto-corrected)*
 
 </td>
 </tr>
@@ -354,29 +500,70 @@ event tickets, I'd be happy to support you.
 
 </td>
 </tr>
+<tr>
+<td>
+
+```
+[Very long query exceeding 128 tokens...]
+```
+
+</td>
+<td>
+
+```
+⚠️ Your question is too long. Try something 
+shorter like: 'How do I get a refund?'
+```
+
+</td>
+</tr>
 </table>
 
 ### Programmatic Usage
 
 ```python
-from transformers import GPT2Tokenizer, GPT2LMHeadModel
+from transformers import GPT2Tokenizer, GPT2LMHeadModel, pipeline
+from gliner import GLiNER
 import torch
 
 # Load models
-model = GPT2LMHeadModel.from_pretrained("IamPradeep/AETCSCB_OOD_IC_DistilGPT2_Fine-tuned")
-tokenizer = GPT2Tokenizer.from_pretrained("IamPradeep/AETCSCB_OOD_IC_DistilGPT2_Fine-tuned")
+spell_corrector = pipeline("text2text-generation", 
+                          model="oliverguhr/spelling-correction-english-base")
+gliner_model = GLiNER.from_pretrained("gliner-community/gliner_small-v2.5")
+gpt2_model = GPT2LMHeadModel.from_pretrained("IamPradeep/AETCSCB_OOD_IC_DistilGPT2_Fine-tuned")
+gpt2_tokenizer = GPT2Tokenizer.from_pretrained("IamPradeep/AETCSCB_OOD_IC_DistilGPT2_Fine-tuned")
 
-def generate_response(instruction, max_length=256):
+def validate_token_length(query, tokenizer, max_tokens=128):
+    """Validate query token length before processing"""
+    tokens = tokenizer.encode(query, add_special_tokens=True)
+    if len(tokens) > max_tokens:
+        return None, f"Query too long ({len(tokens)} tokens, max {max_tokens})"
+    return query, None
+
+def correct_spelling(query, spell_corrector):
+    """Correct spelling after token validation"""
+    result = spell_corrector(query, max_length=256)
+    return result[0]['generated_text'].strip()
+
+def extract_entities(query, model):
+    """Extract entities using GLiNER"""
+    labels = ["event", "city", "location", "concert", "festival", "show", "match", "game"]
+    entities = model.predict_entities(query, labels, threshold=0.4)
+    return entities
+
+def generate_response(instruction, model, tokenizer, max_length=256):
+    """Generate response using fine-tuned DistilGPT2"""
     model.eval()
+    device = next(model.parameters()).device
     input_text = f"Instruction: {instruction} Response:"
-    inputs = tokenizer(input_text, return_tensors="pt", padding=True)
+    inputs = tokenizer(input_text, return_tensors="pt", padding=True).to(device)
     
     with torch.no_grad():
         outputs = model.generate(
             input_ids=inputs["input_ids"],
             attention_mask=inputs["attention_mask"],
             max_length=max_length,
-            temperature=0.4,
+            temperature=0.5,
             top_p=0.95,
             do_sample=True,
             pad_token_id=tokenizer.eos_token_id
@@ -386,9 +573,25 @@ def generate_response(instruction, max_length=256):
     response_start = response.find("Response:") + len("Response:")
     return response[response_start:].strip()
 
-# Example
-response = generate_response("How can I get a refund for my ticket?")
-print(response)
+# Example usage
+query = "How can I cancle my tiket for the Coldplay consert?"
+
+# Step 1: Token validation
+validated_query, error = validate_token_length(query, gpt2_tokenizer)
+if error:
+    print(f"Error: {error}")
+else:
+    # Step 2: Spell correction
+    corrected_query = correct_spelling(validated_query, spell_corrector)
+    print(f"Corrected: {corrected_query}")
+    
+    # Step 3: Entity extraction
+    entities = extract_entities(corrected_query, gliner_model)
+    print(f"Entities: {entities}")
+    
+    # Step 4: Response generation
+    response = generate_response(corrected_query, gpt2_model, gpt2_tokenizer)
+    print(f"Response: {response}")
 ```
 
 ---
@@ -466,30 +669,20 @@ def compute_metrics(eval_pred):
 
 <div align="center">
 
+<table>
+<tr>
+<td align="center"><img src="https://github.com/MarpakaPradeepSai/Advanced-Event-Ticketing-Customer-Support-Chatbot/blob/main/Data/Images%20&%20GIFs/In-Domain%20Respose%20GIF.gif?raw=true" alt="In-Domain Query Demo" width="500" /></td>
+<td align="center"><img src="https://github.com/MarpakaPradeepSai/Advanced-Event-Ticketing-Customer-Support-Chatbot/blob/main/Data/Images%20&%20GIFs/OOD%20Respose%20GIF.gif?raw=true" alt="Out-of-Domain Query Demo" width="500" /></td>
+</tr>
+<tr>
+<td align="center"><b>✅ In-Domain Query Response</b><br><i>Event ticketing related queries handled with detailed responses</i></td>
+<td align="center"><b>🚫 Out-of-Domain Query Response</b><br><i>Off-topic queries gracefully declined with polite fallback response</i></td>
+</tr>
+</table>
+
 ### 🌐 [Try the Live Demo](https://advanced-event-ticketing-customer-support-chatbot.streamlit.app/)
 
 </div>
-
-### Screenshots
-
-<table>
-<tr>
-<td align="center" width="50%">
-
-**Chat Interface**
-
-The main chat interface with example queries dropdown
-
-</td>
-<td align="center" width="50%">
-
-**Response Generation**
-
-Real-time streaming response with NER integration
-
-</td>
-</tr>
-</table>
 
 ---
 
@@ -498,79 +691,22 @@ Real-time streaming response with NER integration
 ```
 Advanced-Event-Ticketing-Chatbot/
 │
-├── 📂 models/
-│   ├── distilgpt2_finetuned/          # Fine-tuned response generator
-│   └── distilbert_classifier/          # Query classifier
+├── Data/                       # 1. Dataset Repository
+│   ├── Bitext-events-ticketing-llm-chatbot-training-dataset.csv   # Response generation data
+│   ├── Full_data_for_classification_55413.csv                     # Main classifier dataset
+│   ├── extra-large-out-of-domain.csv                              # OOD samples for robustness
+│   └── identity_creator_Extended_2892.csv                         # Personality & identity data
 │
-├── 📂 notebooks/
-│   ├── 01_data_preparation.ipynb       # Data preprocessing
-│   ├── 02_gpt2_training.ipynb          # Response generator training
-│   ├── 03_classifier_training.ipynb    # Classifier training
-│   └── 04_evaluation.ipynb             # Model evaluation
+├── Notebook/                   # 2. Model Training
+│   ├── Advanced_Event_Ticketing_Chatbot_DistilGPT2_FineTuned.ipynb # Response model training
+│   ├── Chatbot_Query_Classifier_DistilBERT_Fine_tuned.ipynb        # Intent model training
+│   └── Inference_(DistilBERT+DistilGPT2).ipynb                     # Local model testing
 │
-├── 📂 src/
-│   ├── __init__.py
-│   ├── model_loader.py                 # Model loading utilities
-│   ├── response_generator.py           # Response generation logic
-│   ├── query_classifier.py             # OOD classification
-│   ├── ner_processor.py                # Entity extraction
-│   └── placeholder_handler.py          # Placeholder replacement
-│
-├── 📂 data/
-│   ├── raw/                            # Raw training data
-│   └── processed/                      # Preprocessed datasets
-│
-├── 📄 app.py                           # Streamlit application
-├── 📄 requirements.txt                 # Dependencies
-├── 📄 README.md                        # This file
-└── 📄 LICENSE                          # MIT License
+├── Advanced_Chatbot.py         # 3. Main Streamlit Application
+├── requirements.txt            # 4. Project Dependencies
+├── LICENSE                     # 5. MIT License
+└── README.md                   # 6. Documentation
 ```
-
----
-
-## 🔮 Future Enhancements
-
-<table>
-<tr>
-<td>
-
-### 🎯 Short-term Goals
-- [ ] Multi-turn conversation support
-- [ ] Voice input integration
-- [ ] Mobile-responsive design
-- [ ] Rate limiting and caching
-
-</td>
-<td>
-
-### 🚀 Long-term Goals
-- [ ] Multilingual support
-- [ ] Integration with ticketing APIs
-- [ ] Admin dashboard for analytics
-- [ ] Custom model fine-tuning interface
-
-</td>
-</tr>
-</table>
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Here's how you can help:
-
-1. **Fork** the repository
-2. **Create** your feature branch (`git checkout -b feature/AmazingFeature`)
-3. **Commit** your changes (`git commit -m 'Add some AmazingFeature'`)
-4. **Push** to the branch (`git push origin feature/AmazingFeature`)
-5. **Open** a Pull Request
-
-### Development Guidelines
-
-- Follow PEP 8 style guidelines
-- Add tests for new features
-- Update documentation as needed
-- Use meaningful commit messages
 
 ---
 
@@ -588,7 +724,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 |----------|-------------|
 | [Hugging Face](https://huggingface.co/) | Transformers library and model hosting |
 | [Streamlit](https://streamlit.io/) | Web application framework |
-| [spaCy](https://spacy.io/) | NER and NLP processing |
+| [GLiNER](https://github.com/urchade/GLiNER) | Zero-shot NER model |
+| [Oliver Guhr](https://huggingface.co/oliverguhr) | Spell correction model |
 | [Weights & Biases](https://wandb.ai/) | Experiment tracking |
 
 </div>
@@ -602,24 +739,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 <br>
 
 **Built with ❤️ by [Marpaka Pradeep Sai](https://github.com/MarpakaPradeepSai)**
-
-<br>
-
-[![GitHub followers](https://img.shields.io/github/followers/MarpakaPradeepSai?style=social)](https://github.com/MarpakaPradeepSai)
-[![Twitter Follow](https://img.shields.io/twitter/follow/MarpakaPradeep?style=social)](https://twitter.com/MarpakaPradeep)
-
-</div>
-
----
-
-<div align="center">
-
-```
-┌────────────────────────────────────────────────────────────────────────────┐
-│                                                                            │
-│   "The best way to predict the future is to create it." - Peter Drucker   │
-│                                                                            │
-└────────────────────────────────────────────────────────────────────────────┘
-```
 
 </div>
