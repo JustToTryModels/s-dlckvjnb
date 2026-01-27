@@ -3,7 +3,7 @@ import torch
 from transformers import (
     GPT2Tokenizer, GPT2LMHeadModel,
     AutoTokenizer, AutoModelForSequenceClassification,
-    pipeline
+    AutoModelForSeq2SeqLM
 )
 from gliner import GLiNER
 import time
@@ -57,9 +57,12 @@ fallback_responses = [
 
 @st.cache_resource
 def load_spell_corrector():
-    device = 0 if torch.cuda.is_available() else -1
-    model = pipeline("text2text-generation", model="oliverguhr/spelling-correction-english-base", device=device)
-    return model
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    tokenizer = AutoTokenizer.from_pretrained("oliverguhr/spelling-correction-english-base")
+    model = AutoModelForSeq2SeqLM.from_pretrained("oliverguhr/spelling-correction-english-base")
+    model.to(device)
+    model.eval()
+    return model, tokenizer
 
 @st.cache_resource
 def load_gliner_model():
@@ -92,6 +95,7 @@ def load_classifier_model():
         return None, None
 
 def preprocess_query(query: str, spell_corrector, query_tokenizer, max_tokens: int = 128):
+    spell_model, spell_tokenizer = spell_corrector
     query = query.strip()
     if len(query) == 0:
         return query, None
@@ -102,11 +106,13 @@ def preprocess_query(query: str, spell_corrector, query_tokenizer, max_tokens: i
         error_msg = "⚠️ Your question is too long. Try something shorter like: <b>'How do I get a refund?'</b>"
         return None, error_msg
     try:
-        results = spell_corrector(query, max_length=256)
-        if results and len(results) > 0:
-            corrected = results[0].get('generated_text', '').strip()
-            if corrected:
-                query = corrected
+        device = next(spell_model.parameters()).device
+        inputs = spell_tokenizer(query, return_tensors="pt", padding=True).to(device)
+        with torch.no_grad():
+            outputs = spell_model.generate(**inputs, max_length=256)
+        corrected = spell_tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
+        if corrected:
+            query = corrected
     except Exception as e:
         print(f"Spell correction error: {e}")
     return query, None
