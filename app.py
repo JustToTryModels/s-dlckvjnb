@@ -263,11 +263,6 @@ st.markdown(
 /* Change font to Tiempos for the entire app with global font size */
 * { 
     font-family: 'Tiempos', 'Tiempos Text', Georgia, serif !important;
-    font-size: 15px !important;
-}
-
-h1 {
-    font-size: 38px !important;
 }
 
 .stButton>button { 
@@ -322,7 +317,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.markdown("<h1>Advanced Event Ticketing Chatbot</h1>", unsafe_allow_html=True)
+st.title("Advanced Event Ticketing Chatbot")
 
 # --- Initialize state variables for managing generation process ---
 if "models_loaded" not in st.session_state:
