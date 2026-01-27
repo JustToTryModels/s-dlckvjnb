@@ -1,5 +1,5 @@
 streamlit==1.52.2
-gliner==0.2.7
+gliner>=0.2.10
 torch
 transformers>=4.30.0
 sentencepiece
